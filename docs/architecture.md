@@ -14,6 +14,8 @@ The suite is four capabilities that each answer one question, plus this reposito
 | Profile | What does this person want others to know about them, in this context? | Yes: the only general store |
 | Authorisation | May this subject perform this permission on this resource, now? | No |
 
+Profile is the only canonical source of personal data that describes a person, and of the workflows over it (collection, correction, disclosure, export, erasure). Authentication holds sign-in identifiers for signing in, recovery and security notices only; it never stores, serves or seeds names, pictures or other profile attributes, even when an identity provider supplies them.
+
 No member imports another. The host application composes them: it supplies each member's ports with adapters that call another member's public server functions, and it relays outbox events between them. Reference adapters for these connections will live in this repository.
 
 ## 2. Identifiers
@@ -55,6 +57,7 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `group.settings-changed` | Identity | Profile (departure data policy), Authorisation |
 | `tenant.created`, `tenant.closing` | Identity | All members |
 | `break-glass.used`, `break-glass.review-closed` | Identity | Host alerting to every operator and affected owner; audit |
+| `invitation.accepted`, `invitation.refused` | Identity | Notification capabilities (the inviter; administrators when confirmation is needed) |
 | `approval.requested`, `approval.decided` | Identity or Authorisation | Notification capabilities |
 | `profile.anonymised` | Profile | Domain capabilities that cached names |
 | `authentication.sessions-revoked` | Authentication | Audit |

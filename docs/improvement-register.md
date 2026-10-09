@@ -35,7 +35,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 |---|---|---|---|---|
 | 15 | AuthZEN-shaped decision endpoint (subject, action, resource, context) | Authorisation | Planned | Optional later phase, on demand |
 | 16 | Framework-free decision engine entry point | Authorisation | Planned | Authorisation phase 2 packaging |
-| 17 | Standard OIDC claim names (`name`, `given_name`, `family_name`, `preferred_username`, `locale`, `zoneinfo`) so federated sign-in can fill them | Profile (moved from Identity: personal data lives in Profile) | Planned | Profile phase 1 contract |
+| 17 | Standard OIDC claim names (`name`, `given_name`, `family_name`, `preferred_username`, `locale`, `zoneinfo`) in Profile's record. Any import of a provider's claims is a Profile workflow with the person's consent; Authentication never stores or seeds them | Profile (moved from Identity: personal data lives in Profile) | Planned | Profile phase 1 contract |
 | 18 | Mapping identity-provider group claims to memberships, only by explicit host configuration | Identity, iam-integration | Planned | After Identity phase 1; never automatic |
 | 19 | Roles and policy as versioned JSON for review and promotion between environments | Authorisation | Planned | Authorisation phase 3 |
 

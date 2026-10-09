@@ -20,6 +20,8 @@ Invitations expire after 14 days and are single use. An invitation sent to a sig
 
 An invitation is a bearer token, and **Identity never receives the address it is sent to**. The host's invitation endpoint asks Identity for an invitation, receives the token once, and passes token and address to a notification capability for delivery. Identity stores only a hash of the token, limits how many invitations a person or group may send and how many acceptance attempts an identity may make, and answers every well-formed request identically. An invitation to an existing identity is bound to it, so only that identity can accept; any other invitation can be accepted by whoever signs in with the token, being provisioned first, with the inviting tenant as their home tenant. An invitation may carry the membership's start and end dates.
 
+**Confirming who accepted.** A bearer token can be forwarded. Each group therefore chooses, per membership kind, whether an accepted invitation takes effect at once or waits for an administrator to confirm who accepted it: by default guests wait for confirmation and members do not, and any group may require it for members too. While it waits, the person who accepted has no membership; an administrator sees who accepted (through Profile's display name) and confirms, which creates the membership, or refuses. Nobody confirms their own acceptance. A confirmation not given within 7 days expires the invitation. Invitations bound to an existing identity need no confirmation. Every acceptance tells the inviter (`invitation.accepted`), whatever the setting.
+
 ## Leaving
 
 The member may leave at any time, except from their personal group, and except where they are the last owner (they must appoint another owner or archive the group first).
@@ -64,3 +66,4 @@ The leaver may ask for deletion; the group's policy decides the outcome within t
 - An invitation to an unknown sign-in identifier and to a known one produce the same response.
 - Identity's store holds no invitation token or address, only a token hash; a used, revoked or expired token admits nobody.
 - A membership past its end date confers nothing, even before Identity records it `ended`.
+- A guest invitation accepted by a forwarded link confers nothing until an administrator confirms who accepted; a refused acceptance creates no membership; nobody confirms their own.

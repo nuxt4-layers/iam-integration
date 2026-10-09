@@ -11,8 +11,8 @@ The person, after reauthentication, or an operator acting on a verified request 
 | Request | Profile | Identity | Authentication | Authorisation | Domain capabilities |
 |---|---|---|---|---|---|
 | Access and export | Profile record, disclosure settings | Identity state, memberships and their history | Sign-in identifiers, factors (not secrets), session list | Role assignments and grants held | Through a host-supplied export port, per capability |
-| Correction | Profile record | — | Sign-in identifier change (through Authentication's own flow) | — | Their own records, through their contracts |
-| Erasure | Delete the record (anonymisation) | Close the identity ([account closure](account-closure.md)) or end named memberships | Delete credentials and identifiers | Remove assignments and grants | Delete or unlink as their purpose allows |
+| Correction | Profile record | Rename a group whose name identifies the requester | Sign-in identifier change (through Authentication's own flow) | — | Their own records, through their contracts |
+| Erasure | Delete the record (anonymisation) | Close the identity ([account closure](account-closure.md)) or end named memberships; rename a group whose name identifies the requester | Delete credentials and identifiers | Remove assignments and grants | Delete or unlink as their purpose allows |
 | Objection or restriction | Restrict disclosure | Pause the identity or membership | — | — | Stop the processing objected to |
 
 ## Steps
@@ -26,6 +26,8 @@ The person, after reauthentication, or an operator acting on a verified request 
 
 - Requests never reveal other people's personal data. Exports of group activity show other members as Profile's disclosure rules would show them to the requester.
 - Erasure is anonymisation by unlinking (ADR-0005 §2.8): domain records keep the opaque identifier.
+- **Group names.** Identity holds no personal data, but a group's name can identify a person. When a valid correction or erasure request concerns a group name, Identity's part is a rename by the group's owners (`identity.groups:rename`, `medium` risk). If the owners have not renamed it within half the request's deadline, a platform operator renames it, with a reason code. Identity never holds the requester's name, so Profile's request names the group by its identifier.
+- **Authentication is never a source of profile data.** Its part covers sign-in identifiers, factors and sessions only; it holds no name, picture or other attribute describing the person to export, correct or erase.
 - Legal holds are recorded by Profile with a reason code and an end date, and block only the erasure they cover.
 
 ## Acceptance tests
@@ -33,3 +35,4 @@ The person, after reauthentication, or an operator acting on a verified request 
 - An export contains each member's part and no other person's personal data.
 - Erasure leaves no personal data for the person in any member except under recorded legal hold.
 - A request is answered or raised to operators before its due date.
+- A correction or erasure request about a group name ends with the group renamed, by its owners or, failing them, by an operator.

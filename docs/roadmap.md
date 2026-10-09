@@ -16,7 +16,8 @@
 | Authorisation | Adapters for Identity's access-decision and approval-policy ports; Identity's permissions in the catalogue; default and guest roles applied on `membership.added` by kind | [Architecture](architecture.md) §3 |
 | Authorisation | Pending-change store and approval flow for role and grant changes | [Approvals](processes/approvals.md) |
 | Authentication | Provisioning port to Identity: `reserve` from the engine's user-creation hook (the engine's user identifier is the identity identifier), `confirm` after verification, discard the account on `identity.provisioning-expired` | [Provisioning](processes/provisioning.md) |
-| Authentication | Enforce passkey-only sign-in for break-glass identities; blank the provider-supplied name and image on federated sign-up (names are Profile's) | ADR-0007; ADR-0005 |
+| Authentication | Enforce passkey-only sign-in for break-glass identities | ADR-0007 |
+| Authentication | Never a source of profile data: store no provider-supplied name or picture, and blank those stored before. Done in [nuxt4-layers/authentication#18](https://github.com/nuxt4-layers/authentication/pull/18) | [Architecture](architecture.md) §1 |
 | Authentication | Refuse sign-in and session refresh for `suspended` and `closed` identities; revoke sessions on events | [Architecture](architecture.md) §4 |
 | Identity | Everything in the state models and processes. Phase 1 (contract, conformance suite, docs) is in review in [`nuxt4-layers/identity`](https://github.com/nuxt4-layers/identity); its roadmap records Profile's dependencies on Identity | — |
 | Identity (phase 1) | SCIM-compatible `externalId`; safe names; coarse errors; correlation identifiers; membership start and end dates; hashed, rate-limited invitations; conformance suite for its directory port | [Improvement register](improvement-register.md) items 5, 6, 12, 13, 20, 22, 1 |
@@ -54,4 +55,6 @@ Decided on 2026-10-09 and recorded in Identity's `docs/design-decisions.md`:
 | 10 | Departure data policy fields | History visibility (default administrators), deletion-request handling (default anonymise), retention reasons | [Joining and leaving](processes/joining-and-leaving.md) |
 | 11 | What a group may say about itself | A safe name only | — |
 | 12 | Identity's decisions and permission names | An access-decision port from Authorisation; permissions in Authorisation's `<resource>:<action>` grammar | [Architecture](architecture.md) §3; [Group lifecycle](processes/group-lifecycle.md); [Provisioning](processes/provisioning.md) |
-
+| 13 | Authentication stores a provider's name and picture | Authentication is never a source of profile data nor of the workflows over it; Profile is the only canonical source | [Architecture](architecture.md) §1; [Data-subject requests](processes/data-subject-requests.md) |
+| 14 | Forwarded invitation links | A per-kind group setting to confirm who accepted; default confirm for guests, immediate for members | [Joining and leaving](processes/joining-and-leaving.md) |
+| 15 | A group name that identifies a person | Accepted with treatment: a valid correction or erasure request is met by a rename | [Data-subject requests](processes/data-subject-requests.md) |
