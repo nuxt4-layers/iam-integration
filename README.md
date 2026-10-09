@@ -20,7 +20,8 @@ This repository owns no identity, credential, permission or personal data. It is
 - [ADR-0003 — Group Model and Identity Before Logging](https://github.com/nuxt4-layers/platform-architecture/blob/185c4934b641f375179b6e054afdde37df1f1bab/docs/decisions/ADR-0003-group-model-and-identity-first.md)
 - [ADR-0004 — Documentation Placement](https://github.com/nuxt4-layers/platform-architecture/blob/185c4934b641f375179b6e054afdde37df1f1bab/docs/decisions/ADR-0004-documentation-placement.md)
 - [ADR-0005 — Identity and Access Management Suite](https://github.com/nuxt4-layers/platform-architecture/blob/185c4934b641f375179b6e054afdde37df1f1bab/docs/decisions/ADR-0005-iam-suite.md)
-- ADR-0006 — Polyglot Persistence and Data-Store Security (proposed in platform-architecture; pinned here once accepted)
+- [ADR-0006 — Polyglot Persistence and Data-Store Security](https://github.com/nuxt4-layers/platform-architecture/blob/1a6d9da53c4957ff16ae7a28269c49a39d23cff2/docs/decisions/ADR-0006-polyglot-persistence-and-data-store-security.md)
+- [Data Store Security Standard v0.1](https://github.com/nuxt4-layers/platform-architecture/blob/1a6d9da53c4957ff16ae7a28269c49a39d23cff2/docs/standards/data-store-security-v01.md)
 
 Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform-architecture`](https://github.com/nuxt4-layers/platform-architecture).
 
