@@ -24,9 +24,6 @@
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm test"
   },
-  "peerDependencies": {
-    "nuxt": "^4.5.0"
-  },
   "devDependencies": {
     "@types/node": "^24.13.6",
     "typescript": "^6.0.3",
