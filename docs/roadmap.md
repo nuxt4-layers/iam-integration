@@ -17,7 +17,7 @@
 | Authorisation | Pending-change store and approval flow for role and grant changes | [Approvals](processes/approvals.md) |
 | Authentication | Provisioning port to Identity: `reserve` from the engine's user-creation hook (the engine's user identifier is the identity identifier), `confirm` after verification, discard the account on `identity.provisioning-expired` | [Provisioning](processes/provisioning.md) |
 | Authentication | Enforce passkey-only sign-in for break-glass identities | ADR-0007 |
-| Authentication | Never a source of profile data: store no provider-supplied name or picture, and blank those stored before. In review: [nuxt4-layers/authentication#18](https://github.com/nuxt4-layers/authentication/pull/18) | [Architecture](architecture.md) §1 |
+| Authentication | Never a source of profile data: store no provider-supplied name or picture, and blank those stored before. Done in [nuxt4-layers/authentication#18](https://github.com/nuxt4-layers/authentication/pull/18) | [Architecture](architecture.md) §1 |
 | Authentication | Refuse sign-in and session refresh for `suspended` and `closed` identities; revoke sessions on events | [Architecture](architecture.md) §4 |
 | Identity | Everything in the state models and processes. Phase 1 (contract, conformance suite, docs) is in review in [`nuxt4-layers/identity`](https://github.com/nuxt4-layers/identity); its roadmap records Profile's dependencies on Identity | — |
 | Identity (phase 1) | SCIM-compatible `externalId`; safe names; coarse errors; correlation identifiers; membership start and end dates; hashed, rate-limited invitations; conformance suite for its directory port | [Improvement register](improvement-register.md) items 5, 6, 12, 13, 20, 22, 1 |
