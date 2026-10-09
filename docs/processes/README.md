@@ -13,6 +13,19 @@ Processes that span more than one IAM member. A process that touches one member 
 | [Data-subject requests](data-subject-requests.md) | Access, correction, export, erasure or objection | All, coordinated by Profile |
 | [Recovery](recovery.md) | Lost credentials; orphaned group | Authentication, Identity, Authorisation |
 
+## Planned processes
+
+Agreed in the design discussion; to be specified before the phase that needs them.
+
+| Process | What was agreed | Members |
+|---|---|---|
+| Tenant lifecycle | A new tenant is provisioned by the platform operator under a written procedure, which also appoints its first owner; tenant shutdown disposes of or exports the tenant's data under its jurisdiction | Identity, all members |
+| Group deletion | Disposal of a deleted group's information across every store, under the group's policy and legal holds; distinct from archiving | Identity, domain capabilities |
+| Retention | Retention schedules per kind of data in each member; legal holds that pause deletion, recorded with a reason code and an end date | All members |
+| Jurisdiction policy packs | Each tenant carries a jurisdiction (selecting a policy pack: UK GDPR, EU GDPR, CCPA and so on, with deadlines, legal bases and retention rules) and a data region (ADR-0006 §7). Packs need sign-off by someone qualified in each jurisdiction's law | Host, Profile, all members |
+| Just-in-time elevation and access reviews | Improvement register items 7 and 9 | Authorisation, Identity |
+| Break-glass access | Improvement register open decision D1 | Authentication, host |
+
 ## Conventions
 
 Every process document states:

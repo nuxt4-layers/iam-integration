@@ -2,6 +2,10 @@
 
 Pausing is chosen by the person. Suspension is imposed by others. Both keep roles but make them inactive ([state models](../states.md)).
 
+## How fine-grained a pause is
+
+A pause applies at two levels, account-wide or per group. Within either level, Profile offers finer controls over what stays visible while paused, for example hiding the profile while keeping attribution on past contributions. Those controls are Profile's, specified in its contract; Identity records only the state.
+
 ## Pause a membership
 
 **Actor:** the member, at aal1.
