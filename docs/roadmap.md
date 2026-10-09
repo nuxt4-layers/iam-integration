@@ -3,8 +3,8 @@
 | Phase | Scope | Status |
 |---|---|---|
 | 1. Specification | Suite architecture, state models and cross-capability process specifications | In review |
-| 2. Contracts | Port and event schemas (zod) shared by reference adapters, once Identity and Profile publish contract 1 | Planned |
-| 3. Reference adapters | Adapters connecting members' ports (§3 of the architecture) and a reference outbox relay | Planned |
+| 2. Contracts | The members' shapes the adapters need, structurally (`src/members.ts`); each member's own contract stays the source | In review |
+| 3. Reference adapters | Adapters between Identity, Authentication and Authorisation, Identity's event handling and credential recovery ([adapters](adapters.md)); Profile's when it exists | In review |
 | 4. Composition tests | End-to-end tests of each process's acceptance tests in `platform-test-harness` | Planned |
 
 ## Changes required in members
@@ -13,13 +13,13 @@
 |---|---|---|
 | Authorisation | Contract 3: `paused` membership status; `effect` attribute on catalogue permissions; paused members get `view` at `low` or `medium` risk only | [State models](states.md) §2 |
 | Authorisation | Visible-scopes query | ADR-0006 |
-| Authorisation | Adapters for Identity's access-decision and approval-policy ports; Identity's permissions in the catalogue; default and guest roles applied on `membership.added` by kind | [Architecture](architecture.md) §3 |
+| Authorisation | Adapters for Identity's access-decision and approval-policy ports; Identity's permissions in the catalogue; default and guest roles applied on `membership.added` by kind. Storage, decisions and qualification In review in [nuxt4-layers/authorisation#5](https://github.com/nuxt4-layers/authorisation/pull/5); the adapters and role mapping are in this repository ([adapters](adapters.md)) | [Architecture](architecture.md) §3 |
 | Authorisation | Pending-change store and approval flow for role and grant changes | [Approvals](processes/approvals.md) |
-| Authentication | Provisioning port to Identity: `reserve` from the engine's user-creation hook (the engine's user identifier is the identity identifier), `confirm` after verification, discard the account on `identity.provisioning-expired` | [Provisioning](processes/provisioning.md) |
-| Authentication | Enforce passkey-only sign-in for break-glass identities | ADR-0007 |
-| Authentication | Write `authentication.credentials-recovered` (identity, time, recovery method as a code) after any credential recovery, for Identity's recovery hold | [Recovery](processes/recovery.md); [Architecture](architecture.md) §4 |
+| Authentication | Provisioning port to Identity: `reserve` from the engine's user-creation hook (the engine's user identifier is the identity identifier), `confirm` after verification, discard the account on `identity.provisioning-expired`. In review in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | [Provisioning](processes/provisioning.md) |
+| Authentication | Enforce passkey-only sign-in for break-glass identities. In review in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | ADR-0007 |
+| Authentication | Write `authentication.credentials-recovered` (identity, time, recovery method as a code) after any credential recovery, for Identity's recovery hold. In review in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | [Recovery](processes/recovery.md); [Architecture](architecture.md) §4 |
 | Authentication | Never a source of profile data: store no provider-supplied name or picture, and blank those stored before. Done in [nuxt4-layers/authentication#18](https://github.com/nuxt4-layers/authentication/pull/18) | [Architecture](architecture.md) §1 |
-| Authentication | Refuse sign-in and session refresh for `suspended` and `closed` identities; revoke sessions on events | [Architecture](architecture.md) §4 |
+| Authentication | Refuse sign-in and session refresh for `suspended` and `closed` identities; revoke sessions on events. In review in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | [Architecture](architecture.md) §4 |
 | Identity | Everything in the state models and processes. Phases 1 to 5 (contract, storage, governance and approvals, invitations, lifecycle and recovery, administration API, default pages) are merged in [`nuxt4-layers/identity`](https://github.com/nuxt4-layers/identity); its roadmap records Profile's dependencies on Identity | — |
 | Identity | Configurable [safety periods](processes/README.md#safety-periods): platform, tenant and group levels, as governance changes | [Processes](processes/README.md) |
 | Identity (phase 1) | SCIM-compatible `externalId`; safe names; coarse errors; correlation identifiers; membership start and end dates; hashed, rate-limited invitations; conformance suite for its directory port | [Improvement register](improvement-register.md) items 5, 6, 12, 13, 20, 22, 1 |

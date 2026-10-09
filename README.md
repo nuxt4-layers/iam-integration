@@ -7,7 +7,7 @@ The suite's members are independent capabilities that never import one another:
 | Member | Owns |
 |---|---|
 | [`authentication`](https://github.com/nuxt4-layers/authentication) | Credentials, sign-in identifiers, sessions, step-up and reauthentication |
-| [`identity`](https://github.com/nuxt4-layers/identity) (phase 1 in review) | Opaque identities, personal groups, groups, the hierarchy, tenants, memberships and their states |
+| [`identity`](https://github.com/nuxt4-layers/identity) | Opaque identities, personal groups, groups, the hierarchy, tenants, memberships and their states |
 | [`profile`](https://github.com/nuxt4-layers/profile) | The personal data that describes a person, its disclosure, and data-subject requests |
 | [`authorisation`](https://github.com/nuxt4-layers/authorisation) | Roles, assignments, grants and server-side access decisions |
 | `iam-integration` (this repository) | The suite architecture, the processes that span members, and reference adapters between their ports |
@@ -30,9 +30,10 @@ Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform
 - [Suite architecture](docs/architecture.md): members, ports, events and how a host composes them
 - [State models](docs/states.md): identity, membership and group states
 - [Processes](docs/processes/README.md): provisioning, groups, joining and leaving, pausing and suspension, approvals, account closure, data-subject requests and recovery
+- [Reference adapters](docs/adapters.md): the package of adapters between the members' ports, event handling and credential recovery
 - [Roadmap](docs/roadmap.md)
 - [Suite improvement register](docs/improvement-register.md): the 24 suite improvements and the decisions taken on each
 
 ## Status
 
-Documentation only. Reference adapters follow once Identity and Profile publish their contracts.
+Documentation, and the reference adapters between Identity, Authentication and Authorisation (`src/`, [adapters](docs/adapters.md)). Profile's follow once Profile exists.
