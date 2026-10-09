@@ -10,7 +10,7 @@ The person is not the last active owner of any group. Identity lists such groups
 
 ## Steps
 
-1. **Identity** sets the identity `closure-pending` with a grace period (default 30 days; a host may set 7 to 90) and writes `identity.closure-requested`.
+1. **Identity** sets the identity `closure-pending` with a grace period (by default 30 days, within 7 to 90; set by the host and the platform's operators, never by a group: see [safety periods](README.md#safety-periods)) and writes `identity.closure-requested`.
 2. **Authentication** revokes every session. Sign-in during the grace period leads only to cancellation.
 3. **Profile** hides the person from everyone and offers an export ([data-subject requests](data-subject-requests.md)).
 4. The person may cancel during the grace period, after reauthentication. **Identity** restores the previous state and writes `identity.closure-cancelled`.

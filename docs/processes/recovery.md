@@ -10,18 +10,20 @@ Cross-member rules:
 
 1. A recovered session starts at the lowest assurance the recovery method proves. Access to `high` and `critical` permissions needs fresh step-up with a factor that survived the recovery.
 2. **Authentication** writes `authentication.sessions-revoked` for every other session, and the person is told through every enrolled channel.
-3. **Identity** imposes a 72-hour hold on governance changes the recovered person requests at `critical` risk, announced to their groups' co-owners.
+3. **Authentication** writes `authentication.credentials-recovered` (the identity, the time and the recovery method as a code), which the host relays to Identity. **Identity** then imposes a hold on governance changes the recovered person requests at `critical` risk (the configured recovery hold, by default 72 hours; see [safety periods](README.md#safety-periods)), announced with `approval.held` to the group's co-owners. A held change may be approved, but takes effect only when the hold ends.
 4. Where no recovery method remains, the account cannot be recovered by an administrator. The person may sign up afresh; groups they owned follow orphaned-group recovery.
 
 ## Orphaned groups
 
-A group is `orphaned` when no active owner remains: owners closed their accounts, paused them, or were suspended.
+A group is `orphaned` when no active owner remains: owners closed their accounts, paused them, or were suspended. **Identity** records the group `orphaned` the moment that happens, and `active` again when an owner returns (`group.orphaned`, `group.recovered`).
+
+Authority to recover comes from **Identity's own record of ownership and membership**, not from a role in Authorisation: the people this process names (owners above the group, its members) are facts Identity holds, and an orphaned group may have nobody left holding a role in it.
 
 **Actors, in order of preference** (in an incident, a break-glass account under ADR-0007 may also appoint an owner at once, subject to its alert and mandatory review):
 
 1. An owner of the parent group.
 2. An owner of the tenant's root group.
-3. Where neither exists (a root group whose tenant has no other owners), a member of the group with the longest active membership, after a 14-day published delay that any member can object to; an objection sends the case to a platform operator.
+3. Where neither exists (a root group whose tenant has no other owners), a member of the group may propose the member with the longest active membership (themselves included), after the configured recovery delay (by default 14 days; see [safety periods](README.md#safety-periods)) that any member can object to; an objection sends the case to the platform group, whose qualifying members decide.
 
 **Steps:**
 
@@ -34,6 +36,7 @@ Recovery appoints an owner; it never reads a personal group, and personal groups
 ## Acceptance tests
 
 - After credential recovery, a `critical` decision is denied until step-up.
+- A `critical` change requested within the recovery hold is announced as held and takes effect no sooner than the hold's end, even when approved.
 - An orphaned group gains an owner only with approval or after the published delay.
 - An objection during the delay stops automatic appointment.
 - No recovery path grants access to a personal group.
