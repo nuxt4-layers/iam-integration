@@ -6,7 +6,8 @@ import type { IdentityEventLike } from './members'
  * events the other members need not act on are ignored. Access never depends
  * on these: Authentication reads the standing and Authorisation the
  * directory on every decision. They end sessions promptly, remove accounts,
- * and keep roles in step with ownership and membership.
+ * keep roles in step with ownership and membership, and give Profile the
+ * events it keeps records by.
  */
 export interface IdentityEventHandlerDependencies {
   /** Authentication's `revokeAuthenticationSessions`. */
@@ -19,9 +20,19 @@ export interface IdentityEventHandlerDependencies {
   assignRole(input: { principalId: string, groupId: string, roleId: string, actorPrincipalId: string }): Promise<unknown>
   /** Authorisation's `unassignAuthorisationRole`. */
   unassignRole(input: { principalId: string, groupId: string, roleId: string | null, actorPrincipalId: string }): Promise<unknown>
+  /**
+   * Profile's `applyProfileIdentityEvent`, when the host composes Profile: it
+   * receives `identity.provisioned` (an empty record for a person),
+   * `membership.ended` (how the leaver is shown in the group) and
+   * `identity.closed` (erasure), unchanged. Profile is idempotent by event id.
+   */
+  applyProfileEvent?(event: IdentityEventLike): Promise<unknown>
   /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. */
   membershipRoles?: { member: string | null, guest: string | null }
 }
+
+/** The Identity events Profile keeps records by (Profile contract §8). */
+const PROFILE_EVENTS: ReadonlySet<string> = new Set(['identity.provisioned', 'membership.ended', 'identity.closed'])
 
 /** The actor recorded on role changes made because of Identity's events. */
 export const IDENTITY_EVENT_ACTOR = 'iam-integration'
@@ -32,6 +43,7 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
   const text = (value: unknown) => (typeof value === 'string' ? value : null)
 
   return async function handle(event: IdentityEventLike): Promise<void> {
+    if (deps.applyProfileEvent && PROFILE_EVENTS.has(event.type)) await deps.applyProfileEvent(event)
     const data = event.data
     const identityId = text(data.identityId)
     const groupId = text(data.groupId)

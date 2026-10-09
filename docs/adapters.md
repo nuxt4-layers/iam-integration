@@ -32,6 +32,10 @@ Authorisation's wildcards never cover `high` or `critical` permissions. `rolesWi
 | `membership.added` | The membership kind's role (`member`, or `viewer` for guests; configurable), and `owner` for an owner |
 | `membership.ended` | Every role in the group is removed |
 
+With `applyProfileEvent` (Profile's `applyProfileIdentityEvent`), the handler first passes `identity.provisioned`, `membership.ended` and `identity.closed` to Profile unchanged: Profile creates a person's empty record, keeps how a leaver is shown in the group, and erases the record on closure. Profile is idempotent by event id, and a failure rejects the event so that Identity's relay delivers it again. Profile reads pausing and suspension from Identity's disclosure-context port, not from events.
+
+Profile's other ports need no adapter: Identity's `getIdentityDisclosureContext()` already has the shape of `ProfileDisclosureContext`, and `identitySubjectResolverFromAuthentication` returns the subject Profile's `ProfileSubjectResolver` expects.
+
 Role changes are recorded with the actor `iam-integration`.
 
 ## Credential recovery
