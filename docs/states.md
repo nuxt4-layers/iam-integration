@@ -77,13 +77,13 @@ Rules:
 5. A membership may carry a start and an end date (scheduled joiners and leavers, contractors, guests). They are evaluated whenever the membership is read: before its start it confers nothing and is left out of directory answers; after its end it is treated as `ended` at once, and Identity later records it `ended` and writes `membership.ended`. Access never waits for a scheduled job, and there is no separate state for a scheduled membership.
 6. Identity reports each membership's **effective status**, combining its own state, its dates and its identity's state, the most restrictive first: `ended`, then `suspended` (also while the identity is `suspended`, `closure-pending` or `pending`), then `paused`.
 
-**Authorisation impact.** Authorisation contract 2 treats only `active` as conferring access. Contract 3 adds:
+**Authorisation impact.** Authorisation contract 3 provides:
 
-- `paused` to the membership statuses;
+- `paused` among the membership statuses, and the principal's own status (`active`, `paused` or `suspended`, from the identity's state);
 - an explicit `effect: 'view' | 'change'` attribute on every catalogue permission, defaulting to `change`, so a permission without it fails closed;
-- the rule that a `paused` membership confers only `view` permissions at `low` or `medium` risk. A paused member is hidden from the group, so their reading of sensitive material would go unnoticed.
+- the rule that paused standing confers only `view` permissions at `low` or `medium` risk, on every route: roles, the personal-group role and grants. A paused member is hidden from the group, so their reading of sensitive material would go unnoticed. A paused account is therefore view-only in its own personal group too, and a direct grant is view-only while every membership the person holds in the resource's tenant is paused. An active route always wins.
 
-Until contract 3, `paused` maps to `suspended` (no access), which is the safer reading.
+Contract 2 treated only `active` as conferring access; the adapter then mapped `paused` to `suspended` (no access).
 
 ## 2a. Membership kinds
 

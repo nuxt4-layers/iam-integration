@@ -11,7 +11,7 @@
 
 | Member | Change | Source |
 |---|---|---|
-| Authorisation | Contract 3: `paused` membership status; `effect` attribute on catalogue permissions; paused members get `view` at `low` or `medium` risk only | [State models](states.md) §2 |
+| Authorisation | Contract 3: `paused` membership status and principal status; `effect` attribute on catalogue permissions; paused standing gives `view` at `low` or `medium` risk only, on every route. In review in nuxt4-layers/authorisation#6, with Identity's effects in nuxt4-layers/identity#16; the directory adapter passes `paused` through ([adapters](adapters.md)) | [State models](states.md) §2 |
 | Authorisation | Visible-scopes query | ADR-0006 |
 | Authorisation | Adapters for Identity's access-decision and approval-policy ports; Identity's permissions in the catalogue; default and guest roles applied on `membership.added` by kind. Storage, decisions and qualification In review in [nuxt4-layers/authorisation#5](https://github.com/nuxt4-layers/authorisation/pull/5); the adapters and role mapping are in this repository ([adapters](adapters.md)) | [Architecture](architecture.md) §3 |
 | Authorisation | Pending-change store and approval flow for role and grant changes | [Approvals](processes/approvals.md) |
@@ -36,7 +36,7 @@ All decided on 2026-10-09:
 | # | Question | Decision | Recorded in |
 |---|---|---|---|
 | 1 | Who issues the identifier | Identity issues a UUIDv7 before Authentication creates any credential. Verified in the design round: Better Auth 1.7.7 accepts it through its user-creation hook, so no private map is needed | [Architecture](architecture.md) §2 |
-| 2 | Which permissions count as viewing for paused members | An explicit `effect: 'view' \| 'change'` catalogue attribute, default `change`; paused members get only `view` at `low` or `medium` risk | [State models](states.md) §2 |
+| 2 | Which permissions count as viewing for paused members | An explicit `effect: 'view' \| 'change'` catalogue attribute, default `change`; paused members get only `view` at `low` or `medium` risk, on every route including the personal group and grants | [State models](states.md) §2 |
 | 3 | Group pause restrictions in the first release | No; the setting is reserved with the single value `allowed` | [State models](states.md) §2; [Pausing and suspension](processes/pausing-and-suspension.md) |
 | 4 | Tenancy | Inside Identity as its own entity, contract section and module, extractable later; tenants carry jurisdiction and data region | This roadmap; ADR-0003 guardrail |
 | D1 | Break-glass access | Passkey-only break-glass accounts, limited to suspension and orphaned-group recovery | ADR-0007; [Approvals](processes/approvals.md) |
@@ -50,7 +50,7 @@ Decided on 2026-10-09 and recorded in Identity's `docs/design-decisions.md`:
 | # | Question | Decision | Recorded here in |
 |---|---|---|---|
 | 5 | Better Auth creates its user before verification | Two-step provisioning with a `pending` identity state, closed after 24 hours if never confirmed | [State models](states.md) §1; [Provisioning](processes/provisioning.md) |
-| 6 | Directory vocabulary | Identity's own (effective status including `paused`, kind, dates); the adapter maps `paused` to `suspended` for Authorisation contract 2 | [Architecture](architecture.md) §3 |
+| 6 | Directory vocabulary | Identity's own (effective status including `paused`, kind, dates); the adapter passes `paused` through and turns the identity's state into the principal's status for Authorisation contract 3 | [Architecture](architecture.md) §3 |
 | 7 | The personal group's tenant | A home tenant fixed at provisioning: the inviting tenant, or the host's default | [Provisioning](processes/provisioning.md) |
 | 8 | Invitations to an address | Bearer tokens, stored only as hashes; the address never reaches Identity | [Joining and leaving](processes/joining-and-leaving.md) |
 | 9 | Membership dates | An effective window evaluated on every read; no new state | [State models](states.md) §2 |

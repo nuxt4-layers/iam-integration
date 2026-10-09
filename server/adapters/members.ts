@@ -32,6 +32,8 @@ export interface IdentityGroupDescriptionLike {
 export interface IdentityDirectoryLike {
   resolveActor(identityId: string, options: { consistency: 'strong' | 'bounded' }): Promise<{
     identityId: string
+    /** The identity's own state (never `pending`: the directory answers null for those). */
+    identityState: 'active' | 'paused' | 'suspended' | 'closure-pending' | 'closed'
     personalGroup: IdentityGroupDescriptionLike | null
     memberships: readonly { group: IdentityGroupDescriptionLike, effectiveStatus: 'active' | 'paused' | 'suspended' }[]
   } | null>
@@ -116,12 +118,13 @@ export interface AuthorisationGroupLike {
   tenantId: string
 }
 
-/** Authorisation's directory port (contract 2: no `paused` status yet). */
+/** Authorisation's directory port (contract 3). */
 export interface AuthorisationDirectoryLike {
   resolveActor(principalId: string, options: { consistency: 'strong' | 'bounded' }): Promise<{
     principalId: string
+    status: 'active' | 'paused' | 'suspended'
     personalGroup: AuthorisationGroupLike | null
-    memberships: { group: AuthorisationGroupLike, status: 'active' | 'suspended' | 'ended' }[]
+    memberships: { group: AuthorisationGroupLike, status: 'active' | 'paused' | 'suspended' | 'ended' }[]
   } | null>
   describeGroup(groupId: string, options: { consistency: 'strong' | 'bounded' }): Promise<AuthorisationGroupLike | null>
 }
