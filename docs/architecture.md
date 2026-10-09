@@ -16,7 +16,7 @@ The suite is four capabilities that each answer one question, plus this reposito
 
 Profile is the only canonical source of personal data that describes a person, and of the workflows over it (collection, correction, disclosure, export, erasure). Authentication holds sign-in identifiers for signing in, recovery and security notices only; it never stores, serves or seeds names, pictures or other profile attributes, even when an identity provider supplies them.
 
-No member imports another. The host application composes them: it supplies each member's ports with adapters that call another member's public server functions, and it relays outbox events between them. Reference adapters for these connections will live in this repository.
+No member imports another. The host application composes them: it supplies each member's ports with adapters that call another member's public server functions, and it relays outbox events between them. The reference adapters for these connections are in this repository ([adapters](adapters.md)).
 
 ## 2. Identifiers
 

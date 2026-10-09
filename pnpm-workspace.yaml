@@ -1,0 +1,4 @@
+# Supply-chain hardening, as the members: resolve only versions published at
+# least a day ago, and transitive dependencies only from the registry.
+minimumReleaseAge: 1440
+blockExoticSubdeps: true

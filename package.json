@@ -1,0 +1,34 @@
+{
+  "name": "@nuxt4-layers/iam-integration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference adapters between the IAM suite's members (Identity, Authentication, Authorisation, Profile): ports, event handling and credential recovery, with no dependency on any member.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuxt4-layers/iam-integration"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  }
+}
