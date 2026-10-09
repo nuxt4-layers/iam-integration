@@ -17,9 +17,14 @@
 | Authentication | Provisioning port to Identity; principal identifier is the identity identifier | [Provisioning](processes/provisioning.md) |
 | Authentication | Refuse sign-in and session refresh for `suspended` and `closed` identities; revoke sessions on events | [Architecture](architecture.md) §4 |
 | Identity | Everything in the state models and processes; it does not exist yet | — |
+| Identity (phase 1) | SCIM-compatible `externalId`; safe names; coarse errors; correlation identifiers; membership start and end dates; hashed, rate-limited invitations; conformance suite for its directory port | [Improvement register](improvement-register.md) items 5, 6, 12, 13, 20, 22, 1 |
+| Authorisation (phase 2) | Time-limited and just-in-time assignments; framework-free engine entry point; directory conformance suite | [Improvement register](improvement-register.md) items 7, 16, 1 |
+| Profile (phase 1) | OIDC standard claim names; safe names | [Improvement register](improvement-register.md) items 17, 6 |
 | Profile | Record, disclosure, departure data policy application, data-subject coordination | — |
 
 ## Open questions for the Identity design round
+
+Open decisions D1 to D3 in the [improvement register](improvement-register.md) are settled in the same round.
 
 1. Whether Identity issues the identifier before Authentication creates the credential (as specified) or Authentication's existing user identifier is adopted as the identity identifier for existing deployments.
 2. Which permissions count as "viewing" for paused memberships: a flag on catalogue entries, or a naming convention (`*.read`).

@@ -31,6 +31,7 @@ Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform
 - [State models](docs/states.md): identity, membership and group states
 - [Processes](docs/processes/README.md): provisioning, groups, joining and leaving, pausing and suspension, approvals, account closure, data-subject requests and recovery
 - [Roadmap](docs/roadmap.md)
+- [Suite improvement register](docs/improvement-register.md): the 24 suite improvements and the decisions taken on each
 
 ## Status
 
