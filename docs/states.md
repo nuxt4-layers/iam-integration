@@ -1,22 +1,26 @@
 # State Models
 
-**Status:** Draft for the Identity design round  
+**Status:** Decided in the Identity design round (2026-10-09)  
 Identity owns every state here. Other members read it through ports and events ([architecture](architecture.md) §3 and §4).
 
 ## 1. Identity
 
 ```text
-            provision
+          reserve (sign-up)
                │
                ▼
+            pending ── not confirmed within 24 h ──► closed
+               │
+               │ confirm (sign-in identifier verified)
+               ▼
  ┌──────────► active ◄──────────┐
- │  resume     │    │  reinstate │
- │             │    │            │
+ │  resume     │    │  reinstate │ (to the state before suspension)
  │       pause │    │ suspend    │
  │             ▼    ▼            │
- └────────── paused  suspended ──┘
-               │      │
-               ▼      ▼
+ └────────── paused ──suspend──► suspended
+               │                 │
+               │ request closure │ (also from active)
+               ▼                 ▼
          closure-pending ──cancel──► (previous state)
                │
                │ grace period ends
@@ -26,6 +30,7 @@ Identity owns every state here. Other members read it through ports and events (
 
 | State | Set by | Sign-in | Access from memberships | Visible to others | Notifications |
 |---|---|---|---|---|---|
+| `pending` | Identity, when Authentication reserves an identifier at sign-up | Only to complete verification | None; unknown to the directory | No | Verification only |
 | `active` | System, the person, or reinstatement | Yes | Yes, for `active` memberships | As Profile's disclosure allows | Yes |
 | `paused` | The person only | Yes, to view and to resume | None: every membership behaves as paused | No | None |
 | `suspended` | A tenant or platform administrator, with approval at `high` risk | No | None | As a suspended member, to administrators only | None |
@@ -38,6 +43,8 @@ Rules:
 2. Suspension is imposed by others and recorded with a reason code (never free text), the actor and the approver.
 3. Entering `paused`, `suspended` or `closure-pending` revokes the identity's sessions.
 4. A `closed` identity is never reopened. Its identifier is never reissued.
+5. A `pending` identity becomes `active` only when Authentication confirms that the sign-in identifier is verified; confirmation creates the personal group atomically ([provisioning](processes/provisioning.md)). An identity never confirmed is closed after 24 hours. Service and break-glass identities are created `active`.
+6. Suspension may be imposed on an `active` or a `paused` identity; reinstatement restores the state held before it. Closure may be requested from `active`, `paused` or `suspended`; cancellation restores the state held before it.
 
 ## 2. Membership
 
@@ -67,6 +74,8 @@ Rules:
 2. While an identity is `paused`, each of its memberships behaves as `paused`, whatever its own state. Resuming the identity restores each membership's own state.
 3. `ended` is final. Rejoining creates a new membership.
 4. A personal group's membership is never paused, suspended or ended on its own; it follows the identity.
+5. A membership may carry a start and an end date (scheduled joiners and leavers, contractors, guests). They are evaluated whenever the membership is read: before its start it confers nothing and is left out of directory answers; after its end it is treated as `ended` at once, and Identity later records it `ended` and writes `membership.ended`. Access never waits for a scheduled job, and there is no separate state for a scheduled membership.
+6. Identity reports each membership's **effective status**, combining its own state, its dates and its identity's state, the most restrictive first: `ended`, then `suspended` (also while the identity is `suspended`, `closure-pending` or `pending`), then `paused`.
 
 **Authorisation impact.** Authorisation contract 2 treats only `active` as conferring access. Contract 3 adds:
 

@@ -43,9 +43,9 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 
 | # | Improvement | Owner | Status | Where recorded or planned |
 |---|---|---|---|---|
-| 20 | Invitations: single use, 14-day expiry, non-enumerating responses, consent of the invitee; tokens stored only as hashes; rate limits | Identity | Recorded in part | [Joining and leaving](processes/joining-and-leaving.md) records consent, expiry, single use and non-enumeration; hashing and rate limits go into Identity phase 1 |
+| 20 | Invitations: single use, 14-day expiry, non-enumerating responses, consent of the invitee; tokens stored only as hashes; rate limits | Identity | Recorded | [Joining and leaving](processes/joining-and-leaving.md): bearer tokens stored only as hashes, the address never reaching Identity, rate limits; Identity phase 1 contract |
 | 21 | Guest memberships: a `guest` membership kind with restricted default roles, preferred over enabling `externalGrants` | Identity, Authorisation | Recorded | [State models](states.md) §2a: restricted guest role, 90-day renewable end date |
-| 22 | Membership start and end dates: scheduled joiners and leavers; contractors end automatically | Identity | Planned | Identity phase 1 contract (the Group Model Definition already asks for effective-time semantics) |
+| 22 | Membership start and end dates: scheduled joiners and leavers; contractors end automatically | Identity | Recorded | [State models](states.md) §2 rules 5 and 6: an effective window evaluated on every read; Identity phase 1 contract |
 | 23 | Service identities owned by a group, with machine credentials in Authentication | Identity, Authentication | Recorded in part | [Provisioning](processes/provisioning.md) records service identities without personal groups; group ownership and machine credentials are planned for Identity and Authentication |
 | 24 | Support "act as" access | Suite | Recorded: **forbidden** | ADR-0005 §2.2; support uses a time-limited grant to the supporter's own identity. Forbidden on recommendation, accepted when ADR-0005 was merged; allowing it later (with consent, step-up, a time limit, read-only by default, visible to both people and audited under both identities) needs a new ADR |
 
