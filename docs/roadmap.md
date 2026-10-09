@@ -19,7 +19,7 @@
 | Identity | Everything in the state models and processes; it does not exist yet | — |
 | Identity (phase 1) | SCIM-compatible `externalId`; safe names; coarse errors; correlation identifiers; membership start and end dates; hashed, rate-limited invitations; conformance suite for its directory port | [Improvement register](improvement-register.md) items 5, 6, 12, 13, 20, 22, 1 |
 | Authorisation (phase 2) | Time-limited and just-in-time assignments; framework-free engine entry point; directory conformance suite | [Improvement register](improvement-register.md) items 7, 16, 1 |
-| Profile (phase 1) | OIDC standard claim names; safe names | [Improvement register](improvement-register.md) items 17, 6 |
+| Profile (phase 1) | OIDC standard claim names; safe names; fine-grained pause visibility controls | [Improvement register](improvement-register.md) items 17, 6; [Pausing and suspension](processes/pausing-and-suspension.md) |
 | Profile | Record, disclosure, departure data policy application, data-subject coordination | — |
 
 ## Open questions for the Identity design round

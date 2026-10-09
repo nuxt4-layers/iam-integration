@@ -39,6 +39,13 @@ A group administrator removes a member, recording a reason code. Removing an own
 
 The leaver may always choose `anonymise` for themselves, whatever the group's policy, within the law (a legal hold, for example, records the link outside the group's view). Domain capabilities never store names, so the policy is applied by Profile's display-name lookups, not by rewriting domain records.
 
+The group's departure data policy, set by its owners within the law, also states:
+
+- **Visibility in history:** whether the leaver appears in the group's member history, and to whom (all members, administrators only, nobody).
+- **Deletion requests:** what the group must keep (legal or contractual retention) and what it erases or anonymises when the leaver asks. The leaver may ask for deletion; the group's policy decides the outcome within the law, and the anonymisation floor above always applies.
+
+**Free text is the exception to unlinking.** Comments, documents and other text the leaver wrote can themselves contain personal data. Unlinking does not reach it. Each domain capability that stores free text handles it under the group's policy (redaction, anonymisation or retention under legal hold) and documents how in its own threat model.
+
 ## Acceptance tests
 
 - After leaving, a high-risk decision for the leaver in that group is denied at once, and a low-risk one within the bounded consistency period.

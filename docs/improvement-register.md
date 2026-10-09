@@ -21,7 +21,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | # | Improvement | Owner | Status | Where recorded or planned |
 |---|---|---|---|---|
 | 7 | Time-limited role assignments (`expiresAt`) and just-in-time elevation for critical roles | Authorisation | Planned | Authorisation phase 2 schema |
-| 8 | Separation of duties: nobody grants themselves a role or grant at `high` or `critical` risk; two-person rule tiered by risk | Authorisation, Identity | Recorded | ADR-0005 §2.4; [Approvals](processes/approvals.md) |
+| 8 | Separation of duties: nobody grants themselves a role or access at any risk level (outside their own personal group); two-person rule for `high` and `critical` | Authorisation, Identity | Recorded | ADR-0005 §2.4; [Approvals](processes/approvals.md) |
 | 9 | Access reviews: who holds what, since when, for owners to re-confirm or remove | Authorisation, Identity | Planned | Authorisation phase 3 (administration) |
 | 10 | Break-glass emergency access | Host procedure, Authentication | Decision needed | See open decision D1 |
 | 11 | Row-level security on tenant- and group-isolated tables, with `SET LOCAL` and a non-owner runtime role | Identity, Authorisation | Recorded | ADR-0006 §5; Data Store Security Standard §3.5 |
@@ -47,7 +47,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | 21 | Guest memberships: a `guest` membership kind with restricted default roles, preferred over enabling `externalGrants` | Identity, Authorisation | Decision needed | See open decision D2 |
 | 22 | Membership start and end dates: scheduled joiners and leavers; contractors end automatically | Identity | Planned | Identity phase 1 contract (the Group Model Definition already asks for effective-time semantics) |
 | 23 | Service identities owned by a group, with machine credentials in Authentication | Identity, Authentication | Recorded in part | [Provisioning](processes/provisioning.md) records service identities without personal groups; group ownership and machine credentials are planned for Identity and Authentication |
-| 24 | Support "act as" access | Suite | Recorded: **forbidden** | ADR-0005 §2.2; support uses a time-limited grant to the supporter's own identity |
+| 24 | Support "act as" access | Suite | Recorded: **forbidden** | ADR-0005 §2.2; support uses a time-limited grant to the supporter's own identity. Forbidden on recommendation, accepted when ADR-0005 was merged; allowing it later (with consent, step-up, a time limit, read-only by default, visible to both people and audited under both identities) needs a new ADR |
 
 ## Decisions from the discussion that extend the original list
 
@@ -65,6 +65,20 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | Data region per tenant applied to every copy | ADR-0006 §7; Data Store Security Standard §6.4 |
 | Account closure with a grace period | [Account closure](processes/account-closure.md) |
 | Documentation placement: detail in capability and integration repositories, ADRs in platform-architecture | ADR-0004 |
+
+## Refinements to the original items from the discussion
+
+| Item | Refinement | Recorded in |
+|---|---|---|
+| 3 | Leaving a group is not closing an account: leaving ends that membership's access and leaves sessions untouched; only identity-level suspension, account pause and closure revoke sessions | [Joining and leaving](processes/joining-and-leaving.md); [Pausing and suspension](processes/pausing-and-suspension.md) |
+| 3, 4 | The group owns information left behind; its departure data policy decides attribution, visibility in history and the handling of deletion requests within the law; the leaver always has a right to anonymisation | ADR-0005 §2.7; [Joining and leaving](processes/joining-and-leaving.md) |
+| 4 | Data-subject rights are a request workflow (request, each member reports, group policies and legal holds applied, outcome recorded), not blanket deletion; free text written by the person is handled by each domain capability | [Data-subject requests](processes/data-subject-requests.md); [Joining and leaving](processes/joining-and-leaving.md) |
+| 8 | A person is sovereign over themselves and everything their personal group owns, including sharing it; everything else is by grant. No self-grant at any risk level; `low` and `medium` changes by one other authorised person; `high` and `critical` by the two-person rule; groups may raise, never lower | ADR-0005 §2.1, §2.4; [Approvals](processes/approvals.md) |
+| 8 | The first permission: a new group's creator is its founding owner; a new tenant is provisioned by the platform operator under a written procedure | ADR-0005 §2.3; [Planned processes](processes/README.md#planned-processes) |
+| 8 | The grant workflow records requester, beneficiary, risk, justification, approvals, expiry and escalation | [Approvals](processes/approvals.md) |
+| 11 | Row-level security is required, not optional, and security must extend to other kinds of store (graph, search, analytics) through the visible-scopes query and derived-store rules | ADR-0006; Data Store Security Standard |
+| New | `paused` state controlled by the person, account-wide or per group, with finer visibility controls in Profile; a paused member can view, is hidden and receives nothing; roles are kept but inactive; groups may limit pausing within the group but never prevent an account-wide pause | ADR-0005 §2.5–2.6; [State models](states.md); [Pausing and suspension](processes/pausing-and-suspension.md) |
+| New | Workflows to specify: account lifecycle, membership, privilege, data-subject rights, retention, groups and tenants; compliance across jurisdictions through per-tenant policy packs and data regions | [Processes](processes/README.md), including planned processes |
 
 ## Open decisions
 
