@@ -11,10 +11,10 @@
   },
   "exports": {
     ".": "./nuxt.config.ts",
-    "./adapters": "./src/index.ts"
+    "./adapters": "./server/adapters/index.ts"
   },
   "files": [
-    "src",
+    "server",
     "nuxt.config.ts",
     "README.md",
     "LICENSE"

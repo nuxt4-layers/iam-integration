@@ -36,4 +36,4 @@ Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform
 
 ## Status
 
-Documentation, and the reference adapters between Identity, Authentication and Authorisation (`src/`, [adapters](docs/adapters.md)). Profile's follow once Profile exists.
+Documentation, and the reference adapters between Identity, Authentication and Authorisation (`server/adapters/`, [adapters](docs/adapters.md)). Profile's follow once Profile exists.

@@ -3,7 +3,7 @@
 | Phase | Scope | Status |
 |---|---|---|
 | 1. Specification | Suite architecture, state models and cross-capability process specifications | In review |
-| 2. Contracts | The members' shapes the adapters need, structurally (`src/members.ts`); each member's own contract stays the source | In review |
+| 2. Contracts | The members' shapes the adapters need, structurally (`server/adapters/members.ts`); each member's own contract stays the source | In review |
 | 3. Reference adapters | Adapters between Identity, Authentication and Authorisation, Identity's event handling and credential recovery ([adapters](adapters.md)); Profile's when it exists | In review |
 | 4. Composition tests | End-to-end tests of each process's acceptance tests in `platform-test-harness` | Planned |
 
