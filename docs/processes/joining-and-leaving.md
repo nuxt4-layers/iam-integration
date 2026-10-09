@@ -8,6 +8,8 @@ A person joins a group by one of:
 - **Request**: the person asks to join; a group administrator approves.
 - **Open join**: the group allows joining without approval. Off by default.
 
+Any of these may create a `member` or a `guest` membership ([state models](../states.md) §2a). A guest gets the group's restricted guest role and an end date 90 days after joining, which a group administrator may renew.
+
 Steps:
 
 1. **Identity** creates the membership `active` and writes `membership.added`.

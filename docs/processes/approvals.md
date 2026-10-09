@@ -35,7 +35,7 @@ A group may raise its requirement; it may never lower it below the default. Rais
 
 - No one approves their own request, including through another identity they control (service identities created by the requester do not qualify).
 - The approval records who, when, at which assurance, and the exact change approved. A change that differs from what was approved needs a new approval.
-- Emergency changes have no bypass. Incident response uses suspension, which has its own approval at `high` risk; during a security incident a platform operator's suspension is approved by a second operator, with no delay.
+- Emergency changes have no bypass of approvals, with one constrained exception. Incident response uses suspension, which has its own approval at `high` risk; during a security incident a platform operator's suspension is approved by a second operator, with no delay. Where no second operator exists, a **break-glass account** (ADR-0007) may suspend an identity or membership, or appoint an owner to an orphaned group, at once. It holds no standing privileges, authenticates only with an offline passkey, and every use alerts every operator and affected owner and opens a mandatory review by another person; its passkey is rotated after each use.
 
 ## Acceptance tests
 

@@ -11,7 +11,7 @@
 
 | Member | Change | Source |
 |---|---|---|
-| Authorisation | Contract 3: `paused` membership status conferring view-only access | [State models](states.md) §2 |
+| Authorisation | Contract 3: `paused` membership status; `effect` attribute on catalogue permissions; paused members get `view` at `low` or `medium` risk only | [State models](states.md) §2 |
 | Authorisation | Visible-scopes query | ADR-0006 |
 | Authorisation | Pending-change store and approval flow for role and grant changes | [Approvals](processes/approvals.md) |
 | Authentication | Provisioning port to Identity; principal identifier is the identity identifier | [Provisioning](processes/provisioning.md) |
@@ -22,11 +22,18 @@
 | Profile (phase 1) | OIDC standard claim names; safe names; fine-grained pause visibility controls | [Improvement register](improvement-register.md) items 17, 6; [Pausing and suspension](processes/pausing-and-suspension.md) |
 | Profile | Record, disclosure, departure data policy application, data-subject coordination | — |
 
-## Open questions for the Identity design round
+## Questions for the Identity design round
 
-Open decisions D1 to D3 in the [improvement register](improvement-register.md) are settled in the same round.
+Open decisions D1 to D3 in the [improvement register](improvement-register.md) are decided too.
 
-1. Whether Identity issues the identifier before Authentication creates the credential (as specified) or Authentication's existing user identifier is adopted as the identity identifier for existing deployments.
-2. Which permissions count as "viewing" for paused memberships: a flag on catalogue entries, or a naming convention (`*.read`).
-3. Whether group pause restrictions (notice, approval) are needed in the first release.
-4. The exact grace-period and delay defaults (30 days closure, 72 hours and 7 days approval delays, 14 days orphan recovery).
+All decided on 2026-10-09:
+
+| # | Question | Decision | Recorded in |
+|---|---|---|---|
+| 1 | Who issues the identifier | Identity issues a UUIDv7 before Authentication creates any credential; Authentication keeps a private engine-to-identity map if its engine cannot accept an external identifier (to verify against Better Auth during design) | [Architecture](architecture.md) §2 |
+| 2 | Which permissions count as viewing for paused members | An explicit `effect: 'view' \| 'change'` catalogue attribute, default `change`; paused members get only `view` at `low` or `medium` risk | [State models](states.md) §2 |
+| 3 | Group pause restrictions in the first release | No; the setting is reserved with the single value `allowed` | [State models](states.md) §2; [Pausing and suspension](processes/pausing-and-suspension.md) |
+| 4 | Tenancy | Inside Identity as its own entity, contract section and module, extractable later; tenants carry jurisdiction and data region | This roadmap; ADR-0003 guardrail |
+| D1 | Break-glass access | Passkey-only break-glass accounts, limited to suspension and orphaned-group recovery | ADR-0007; [Approvals](processes/approvals.md) |
+| D2 | Guest memberships | A `guest` membership kind with a restricted role and a 90-day renewable end date | [State models](states.md) §2a |
+| D3 | Process defaults | Accepted; changeable within bounds, shortening a safety period needs a risk treatment | [Processes](processes/README.md) |

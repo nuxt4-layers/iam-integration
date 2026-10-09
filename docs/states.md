@@ -63,12 +63,27 @@ Rules:
 
 Rules:
 
-1. A group MAY restrict pausing within the group (for example, a duty roster that needs notice). It MUST NOT prevent a person pausing their whole identity, which overrides every group's restriction.
+1. A group's pause setting is reserved in the contract with the single value `allowed` in the first release. A later release MAY add `notice` and `approval` for pausing within the group. No setting can prevent a person pausing their whole identity, which overrides every group's restriction.
 2. While an identity is `paused`, each of its memberships behaves as `paused`, whatever its own state. Resuming the identity restores each membership's own state.
 3. `ended` is final. Rejoining creates a new membership.
 4. A personal group's membership is never paused, suspended or ended on its own; it follows the identity.
 
-**Authorisation impact.** Authorisation contract 2 treats only `active` as conferring access. The view-only access of a `paused` membership needs contract 3: `paused` added to the membership statuses, conferring only permissions marked as viewing. Until then, `paused` maps to `suspended` (no access), which is the safer reading.
+**Authorisation impact.** Authorisation contract 2 treats only `active` as conferring access. Contract 3 adds:
+
+- `paused` to the membership statuses;
+- an explicit `effect: 'view' | 'change'` attribute on every catalogue permission, defaulting to `change`, so a permission without it fails closed;
+- the rule that a `paused` membership confers only `view` permissions at `low` or `medium` risk. A paused member is hidden from the group, so their reading of sensitive material would go unnoticed.
+
+Until contract 3, `paused` maps to `suspended` (no access), which is the safer reading.
+
+## 2a. Membership kinds
+
+| Kind | Meaning | Defaults |
+|---|---|---|
+| `member` | An ordinary member | The group's default role; no end date |
+| `guest` | An outside collaborator | A restricted default role set by the group; an end date 90 days after joining, renewable by a group administrator |
+
+A guest is visible, and is paused, suspended and ended through the same lifecycle as a member. Guests are preferred over Authorisation's external grants, which stay off by default and remain for one-off sharing of a single resource across tenants. Identities are global, so membership of groups in several tenants needs no guest kind; `guest` means only a restricted role and an end date.
 
 ## 3. Group
 

@@ -10,7 +10,7 @@ A pause applies at two levels, account-wide or per group. Within either level, P
 
 **Actor:** the member, at aal1.
 
-1. **Identity** checks the group's pause setting. A group may require notice (up to 7 days) or approval for pausing within it; it may not forbid account-wide pausing.
+1. **Identity** checks the group's pause setting. In the first release the only value is `allowed`; a later release may add notice (up to 7 days) or approval for pausing within the group. No setting may forbid account-wide pausing.
 2. **Identity** sets the membership `paused` and writes `membership.paused`.
 3. **Authorisation** treats the membership as view-only (contract 3) or as no access (contract 2).
 4. **Profile** hides the member from other members of the group.

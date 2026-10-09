@@ -24,7 +24,7 @@ Agreed in the design discussion; to be specified before the phase that needs the
 | Retention | Retention schedules per kind of data in each member; legal holds that pause deletion, recorded with a reason code and an end date | All members |
 | Jurisdiction policy packs | Each tenant carries a jurisdiction (selecting a policy pack: UK GDPR, EU GDPR, CCPA and so on, with deadlines, legal bases and retention rules) and a data region (ADR-0006 §7). Packs need sign-off by someone qualified in each jurisdiction's law | Host, Profile, all members |
 | Just-in-time elevation and access reviews | Improvement register items 7 and 9 | Authorisation, Identity |
-| Break-glass access | Improvement register open decision D1 | Authentication, host |
+| Break-glass access | ADR-0007: passkey-only accounts, suspension and orphaned-group recovery only; the host procedure for provisioning, storing and testing them | Authentication, Identity, host |
 
 ## Conventions
 
@@ -41,5 +41,5 @@ Common rules:
 
 - Steps that change state in one member and must be seen by another use that member's outbox, not a direct call followed by a hope.
 - A process step authorised in one member is not re-authorised by the next unless that member's own contract requires it.
-- Defaults are secure. A host may tighten a period or limit; loosening one needs a documented risk treatment.
+- Defaults are secure and accepted as specified (improvement register D3). A host may change a period or limit within bounds; tightening is free, and shortening a safety period below its default needs a documented risk treatment. Legal deadlines (for example, one month for a data-subject request under UK GDPR) come from the tenant's jurisdiction pack, not from these defaults.
 - Reason codes, never free text, are recorded for actions taken against a person.

@@ -17,7 +17,7 @@ Cross-member rules:
 
 A group is `orphaned` when no active owner remains: owners closed their accounts, paused them, or were suspended.
 
-**Actors, in order of preference:**
+**Actors, in order of preference** (in an incident, a break-glass account under ADR-0007 may also appoint an owner at once, subject to its alert and mandatory review):
 
 1. An owner of the parent group.
 2. An owner of the tenant's root group.

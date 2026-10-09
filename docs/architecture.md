@@ -18,7 +18,7 @@ No member imports another. The host application composes them: it supplies each 
 
 ## 2. Identifiers
 
-- The **identity identifier** issued by Identity is the one identifier for a person or service across the suite. Authentication's principal identifier, Authorisation's subject identifier and Profile's record key are all this value.
+- The **identity identifier** issued by Identity is the one identifier for a person or service across the suite. Authentication's principal identifier, Authorisation's subject identifier and Profile's record key are all this value. Identity issues it before Authentication creates any credential. If Authentication's engine cannot accept an identifier supplied from outside, Authentication keeps a private map from the engine's user identifier to the identity identifier, and only the identity identifier ever leaves it.
 - Group, tenant and membership identifiers are issued by Identity.
 - All identifiers are opaque (UUIDv7) and carry no meaning. None is derived from personal data.
 - Anonymisation removes Profile's record for an identity identifier. Other members keep the identifier, which then refers to nobody that the platform can name.
