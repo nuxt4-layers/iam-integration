@@ -53,14 +53,17 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `identity.suspended`, `identity.reinstated` | Identity | Authentication (revoke sessions; refuse sign-in), Profile |
 | `identity.closure-requested`, `identity.closure-cancelled`, `identity.closed` | Identity | Authentication, Profile, Authorisation, domain capabilities |
 | `membership.added`, `.paused`, `.resumed`, `.suspended`, `.reinstated`, `.dates-changed`, `.ended` | Identity | Authorisation (invalidate caches; apply the default or guest role by kind), Profile (disclosure), domain capabilities |
-| `group.created`, `group.renamed`, `group.reparented`, `group.owners-changed`, `group.orphaned`, `group.archived` | Identity | Authorisation (invalidate caches; assign and remove `owner`; review `group-and-descendants` assignments on reparenting) |
-| `group.settings-changed` | Identity | Profile (departure data policy), Authorisation |
+| `group.created`, `group.renamed`, `group.reparented`, `group.owners-changed`, `group.orphaned`, `group.recovered`, `group.archived` | Identity | Authorisation (invalidate caches; assign and remove `owner`; review `group-and-descendants` assignments on reparenting) |
+| `group.settings-changed` | Identity | Profile (departure data policy), Authorisation; notification capabilities (a change of [safety period](processes/README.md#safety-periods)) |
 | `tenant.created`, `tenant.closing` | Identity | All members |
 | `break-glass.used`, `break-glass.review-closed` | Identity | Host alerting to every operator and affected owner; audit |
+| `join-request.created`, `join-request.decided` | Identity | Notification capabilities (the group's administrators; the person who asked) |
 | `invitation.accepted`, `invitation.refused` | Identity | Notification capabilities (the inviter; administrators when confirmation is needed) |
 | `approval.requested`, `approval.decided` | Identity or Authorisation | Notification capabilities |
+| `approval.held` | Identity | Notification capabilities (the group's co-owners: a change waits out a recovery hold or a less safe safety period) |
 | `profile.anonymised` | Profile | Domain capabilities that cached names |
 | `authentication.sessions-revoked` | Authentication | Audit |
+| `authentication.credentials-recovered` | Authentication | Identity (the recovery hold, [recovery](processes/recovery.md)) |
 
 Rules for every event:
 
