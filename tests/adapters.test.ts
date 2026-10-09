@@ -83,6 +83,7 @@ describe('Identity subject resolver from Authentication', () => {
 
 describe('Authorisation directory from Identity', () => {
   const sales = { groupId: 'sales', tenantId: 't', lineage: ['company', 'sales'], kind: 'standard', state: 'active' }
+  let identityState = 'active'
   const directory = authorisationDirectoryFromIdentity({
     directory: {
       async resolveActor(identityId, options) {
@@ -90,6 +91,7 @@ describe('Authorisation directory from Identity', () => {
         return {
           identityId,
           kind: 'person',
+          identityState,
           personalGroup: { groupId: 'personal', tenantId: 't', lineage: ['personal'] },
           memberships: [
             { group: sales, effectiveStatus: 'active' },
@@ -104,19 +106,32 @@ describe('Authorisation directory from Identity', () => {
     },
   })
 
-  it('speaks Authorisation contract 2: a paused membership confers nothing', async () => {
+  it('speaks Authorisation contract 3: a paused membership passes through as paused', async () => {
+    identityState = 'active'
     const actor = await directory.resolveActor('p', { consistency: 'strong' })
     expect(actor).toEqual({
       principalId: 'p',
+      status: 'active',
       personalGroup: { groupId: 'personal', lineage: ['personal'], tenantId: 't' },
       memberships: [
         { group: { groupId: 'sales', lineage: ['company', 'sales'], tenantId: 't' }, status: 'active' },
-        { group: { groupId: 'paused-group', lineage: ['paused-group'], tenantId: 't' }, status: 'suspended' },
+        { group: { groupId: 'paused-group', lineage: ['paused-group'], tenantId: 't' }, status: 'paused' },
         { group: { groupId: 'suspended-group', lineage: ['suspended-group'], tenantId: 't' }, status: 'suspended' },
       ],
     })
     expect(await directory.describeGroup('sales', { consistency: 'strong' })).toEqual({ groupId: 'sales', lineage: ['company', 'sales'], tenantId: 't' })
     expect(await directory.describeGroup('other', { consistency: 'strong' })).toBeNull()
+  })
+
+  it.each([
+    ['active', 'active'],
+    ['paused', 'paused'],
+    ['suspended', 'suspended'],
+    ['closure-pending', 'suspended'],
+    ['closed', 'suspended'],
+  ])('reports an identity that is %s as a principal that is %s', async (state, status) => {
+    identityState = state
+    expect((await directory.resolveActor('p', { consistency: 'strong' }))?.status).toBe(status)
   })
 })
 
