@@ -18,6 +18,8 @@ Steps:
 
 Invitations expire after 14 days and are single use. An invitation sent to a sign-in identifier reveals nothing about whether that identifier has an account.
 
+An invitation is a bearer token, and **Identity never receives the address it is sent to**. The host's invitation endpoint asks Identity for an invitation, receives the token once, and passes token and address to a notification capability for delivery. Identity stores only a hash of the token, limits how many invitations a person or group may send and how many acceptance attempts an identity may make, and answers every well-formed request identically. An invitation to an existing identity is bound to it, so only that identity can accept; any other invitation can be accepted by whoever signs in with the token, being provisioned first, with the inviting tenant as their home tenant. An invitation may carry the membership's start and end dates.
+
 ## Leaving
 
 The member may leave at any time, except from their personal group, and except where they are the last owner (they must appoint another owner or archive the group first).
@@ -41,10 +43,15 @@ A group administrator removes a member, recording a reason code. Removing an own
 
 The leaver may always choose `anonymise` for themselves, whatever the group's policy, within the law (a legal hold, for example, records the link outside the group's view). Domain capabilities never store names, so the policy is applied by Profile's display-name lookups, not by rewriting domain records.
 
-The group's departure data policy, set by its owners within the law, also states:
+The group's departure data policy is a group setting held by Identity, set by its owners within the law, and supplied to Profile through the disclosure-context port. Besides the attribution above, it states:
 
-- **Visibility in history:** whether the leaver appears in the group's member history, and to whom (all members, administrators only, nobody).
-- **Deletion requests:** what the group must keep (legal or contractual retention) and what it erases or anonymises when the leaver asks. The leaver may ask for deletion; the group's policy decides the outcome within the law, and the anonymisation floor above always applies.
+| Field | Values | Default |
+|---|---|---|
+| Visibility in history | Whether the leaver appears in the group's member history, and to whom: `all-members`, `administrators`, `nobody` | `administrators` |
+| Deletion requests | When the leaver asks for deletion: `anonymise` (unlink attribution; the floor), `erase-where-lawful` (domain capabilities erase the leaver's contributions unless a retention reason applies), `review` (an administrator decides within the jurisdiction's deadline) | `anonymise` |
+| Retention reasons | What the group must keep (legal or contractual retention), as reason codes | None |
+
+The leaver may ask for deletion; the group's policy decides the outcome within the law, and the anonymisation floor above always applies. The leaver's own choice of anonymisation is recorded by Profile, not Identity.
 
 **Free text is the exception to unlinking.** Comments, documents and other text the leaver wrote can themselves contain personal data. Unlinking does not reach it. Each domain capability that stores free text handles it under the group's policy (redaction, anonymisation or retention under legal hold) and documents how in its own threat model.
 
@@ -55,3 +62,5 @@ The group's departure data policy, set by its owners within the law, also states
 - A leaver's chosen anonymisation applies even when the group's policy is `keep-name`.
 - Leaving the personal group, or leaving as the last owner, is refused.
 - An invitation to an unknown sign-in identifier and to a known one produce the same response.
+- Identity's store holds no invitation token or address, only a token hash; a used, revoked or expired token admits nobody.
+- A membership past its end date confers nothing, even before Identity records it `ended`.

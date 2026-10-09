@@ -2,7 +2,7 @@
 
 ## Create
 
-**Actor:** any `active` identity with `identity.group.create` in the target tenant (or, for a child group, in the parent group). Creating a root group in a tenant is `high` risk.
+**Actor:** any `active` identity with `identity.groups:create` in the parent group (`medium` risk) or, for a root group, `identity.root-groups:create` in the tenant (`high` risk, with [approval](approvals.md)).
 
 1. **Identity** creates the group (`active`), records the parent if any, and adds the creator as an `active` member.
 2. **Identity** records the creator as the **founding owner** and writes `group.created`.
@@ -18,7 +18,7 @@ The founding owner is an ordinary owner afterwards: the title confers nothing be
 
 ## Reparent
 
-**Actor:** an owner of the group with `identity.group.reparent` in both the old and new parent. `critical` risk.
+**Actor:** an owner of the group with `identity.groups:reparent` in both the old and new parent. `critical` risk.
 
 1. **Identity** checks the new parent is in the same tenant and that no cycle results, then moves the group and writes `group.reparented` with the old and new lineage.
 2. **Authorisation** invalidates cached lineage. Any `group-and-descendants` assignment now covers or stops covering the group according to the new tree; this follows the current tree by design (Authorisation threat T17). Hosts SHOULD show the owners which inherited assignments will newly apply before approval.

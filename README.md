@@ -7,7 +7,7 @@ The suite's members are independent capabilities that never import one another:
 | Member | Owns |
 |---|---|
 | [`authentication`](https://github.com/nuxt4-layers/authentication) | Credentials, sign-in identifiers, sessions, step-up and reauthentication |
-| `identity` (next to be built) | Opaque identities, personal groups, groups, the hierarchy, tenants, memberships and their states |
+| [`identity`](https://github.com/nuxt4-layers/identity) (phase 1 in review) | Opaque identities, personal groups, groups, the hierarchy, tenants, memberships and their states |
 | [`profile`](https://github.com/nuxt4-layers/profile) | The personal data that describes a person, its disclosure, and data-subject requests |
 | [`authorisation`](https://github.com/nuxt4-layers/authorisation) | Roles, assignments, grants and server-side access decisions |
 | `iam-integration` (this repository) | The suite architecture, the processes that span members, and reference adapters between their ports |
