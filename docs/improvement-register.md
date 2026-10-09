@@ -23,7 +23,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | 7 | Time-limited role assignments (`expiresAt`) and just-in-time elevation for critical roles | Authorisation | Planned | Authorisation phase 2 schema |
 | 8 | Separation of duties: nobody grants themselves a role or access at any risk level (outside their own personal group); two-person rule for `high` and `critical` | Authorisation, Identity | Recorded | ADR-0005 §2.4; [Approvals](processes/approvals.md) |
 | 9 | Access reviews: who holds what, since when, for owners to re-confirm or remove | Authorisation, Identity | Planned | Authorisation phase 3 (administration) |
-| 10 | Break-glass emergency access | Host procedure, Authentication | Decision needed | See open decision D1 |
+| 10 | Break-glass emergency access | Host procedure, Authentication, Identity | Recorded | ADR-0007: passkey-only, no standing privileges, suspension and orphaned-group recovery only, alert and mandatory review on every use |
 | 11 | Row-level security on tenant- and group-isolated tables, with `SET LOCAL` and a non-owner runtime role | Identity, Authorisation | Recorded | ADR-0006 §5; Data Store Security Standard §3.5 |
 | 12 | Coarse errors in Identity: "not found" and "forbidden" never reveal whether a group, member or account exists | Identity | Planned | Identity phase 1 contract (error codes), matching Authorisation; invitations already specified in [Joining and leaving](processes/joining-and-leaving.md) |
 | 13 | Correlation identifiers on every request, port call and event | All members | Recorded | [Architecture](architecture.md) §5 |
@@ -44,7 +44,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | # | Improvement | Owner | Status | Where recorded or planned |
 |---|---|---|---|---|
 | 20 | Invitations: single use, 14-day expiry, non-enumerating responses, consent of the invitee; tokens stored only as hashes; rate limits | Identity | Recorded in part | [Joining and leaving](processes/joining-and-leaving.md) records consent, expiry, single use and non-enumeration; hashing and rate limits go into Identity phase 1 |
-| 21 | Guest memberships: a `guest` membership kind with restricted default roles, preferred over enabling `externalGrants` | Identity, Authorisation | Decision needed | See open decision D2 |
+| 21 | Guest memberships: a `guest` membership kind with restricted default roles, preferred over enabling `externalGrants` | Identity, Authorisation | Recorded | [State models](states.md) §2a: restricted guest role, 90-day renewable end date |
 | 22 | Membership start and end dates: scheduled joiners and leavers; contractors end automatically | Identity | Planned | Identity phase 1 contract (the Group Model Definition already asks for effective-time semantics) |
 | 23 | Service identities owned by a group, with machine credentials in Authentication | Identity, Authentication | Recorded in part | [Provisioning](processes/provisioning.md) records service identities without personal groups; group ownership and machine credentials are planned for Identity and Authentication |
 | 24 | Support "act as" access | Suite | Recorded: **forbidden** | ADR-0005 §2.2; support uses a time-limited grant to the supporter's own identity. Forbidden on recommendation, accepted when ADR-0005 was merged; allowing it later (with consent, step-up, a time limit, read-only by default, visible to both people and audited under both identities) needs a new ADR |
@@ -80,10 +80,10 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | New | `paused` state controlled by the person, account-wide or per group, with finer visibility controls in Profile; a paused member can view, is hidden and receives nothing; roles are kept but inactive; groups may limit pausing within the group but never prevent an account-wide pause | ADR-0005 §2.5–2.6; [State models](states.md); [Pausing and suspension](processes/pausing-and-suspension.md) |
 | New | Workflows to specify: account lifecycle, membership, privilege, data-subject rights, retention, groups and tenants; compliance across jurisdictions through per-tenant policy packs and data regions | [Processes](processes/README.md), including planned processes |
 
-## Open decisions
+## Decided (formerly open)
 
-| # | Question | Options | Recommendation |
+| # | Question | Options | Decision (2026-10-09) |
 |---|---|---|---|
-| D1 | Break-glass emergency access (item 10). The approvals process says emergency changes have no bypass. | (a) No break-glass: incidents use suspension with a second operator; (b) Break-glass accounts with passkeys only, no standing privileges, every use a loud event and a mandatory review | (b) only if a deployment cannot tolerate losing all owners at once; otherwise (a). Decide before Authentication's host-integration phase |
-| D2 | Guest memberships (item 21) | (a) A `guest` membership kind in Identity with restricted default roles; (b) External grants in Authorisation only | (a): it keeps guests visible and revocable through the same membership lifecycle |
-| D3 | Defaults proposed in the processes | 30-day closure grace; 72-hour and 7-day approval delays; 14-day orphan recovery; 14-day invitation expiry; 7-day export availability | Accept, then revisit after the first deployment |
+| D1 | Break-glass emergency access (item 10). The approvals process says emergency changes have no bypass. | (a) No break-glass: incidents use suspension with a second operator; (b) Break-glass accounts with passkeys only, no standing privileges, every use a loud event and a mandatory review | (b), recorded in ADR-0007: the platform may run with a single operator, who cannot satisfy the second-operator approval in an incident |
+| D2 | Guest memberships (item 21) | (a) A `guest` membership kind in Identity with restricted default roles; (b) External grants in Authorisation only | (a), recorded in [State models](states.md) §2a |
+| D3 | Defaults proposed in the processes | 30-day closure grace; 72-hour and 7-day approval delays; 14-day orphan recovery; 14-day invitation expiry; 7-day export availability | Accepted, changeable within bounds; recorded in [Processes](processes/README.md) |
