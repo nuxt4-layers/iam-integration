@@ -1,6 +1,6 @@
 # Reference Adapters
 
-`@nuxt4-layers/iam-integration` (`src/`) holds the reference adapters between the members' ports ([architecture](architecture.md) §3, §4). It imports no member: a host passes in the members' public server functions, and the adapters translate between their vocabularies. They store nothing and decide nothing a member owns. `src/members.ts` names, structurally, what each adapter needs of a member; a host's type check proves the real functions fit.
+`@nuxt4-layers/iam-integration` holds the reference adapters between the members' ports ([architecture](architecture.md) §3, §4), exported at `@nuxt4-layers/iam-integration/adapters` (`src/`). A host `extends` the package as a Nuxt layer, which adds nothing at runtime but has the adapters' TypeScript compiled with the host's server code, as the members' is. The adapters import no member: a host passes in the members' public server functions, and the adapters translate between their vocabularies. They store nothing and decide nothing a member owns. `src/members.ts` names, structurally, what each adapter needs of a member; a host's type check proves the real functions fit.
 
 ## Ports
 

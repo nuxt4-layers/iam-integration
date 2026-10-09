@@ -10,10 +10,12 @@
     "url": "https://github.com/nuxt4-layers/iam-integration"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./nuxt.config.ts",
+    "./adapters": "./src/index.ts"
   },
   "files": [
     "src",
+    "nuxt.config.ts",
     "README.md",
     "LICENSE"
   ],
@@ -21,6 +23,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm test"
+  },
+  "peerDependencies": {
+    "nuxt": "^4.5.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",
