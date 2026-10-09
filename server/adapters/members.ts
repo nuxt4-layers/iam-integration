@@ -63,6 +63,7 @@ export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export interface IdentityEventLike {
   eventId: string
   type: string
+  occurredAt: string
   correlationId: string
   data: Record<string, unknown>
 }

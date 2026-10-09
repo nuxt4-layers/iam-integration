@@ -203,7 +203,7 @@ describe('Identity events', () => {
     async assignRole(input) { log.push(`assign ${input.roleId} ${input.principalId}@${input.groupId} by ${input.actorPrincipalId}`) },
     async unassignRole(input) { log.push(`unassign ${input.roleId ?? 'all'} ${input.principalId}@${input.groupId}`) },
   })
-  const event = (type: string, data: Record<string, unknown>) => ({ eventId: 'e', type, correlationId: 'c', data })
+  const event = (type: string, data: Record<string, unknown>) => ({ eventId: 'e', type, occurredAt: '2026-10-09T20:00:00.000Z', correlationId: 'c', data })
 
   it('ends sessions and removes accounts as Identity says', async () => {
     log.length = 0
@@ -229,6 +229,41 @@ describe('Identity events', () => {
       'unassign owner o@g',
       'unassign all b@g',
     ])
+  })
+})
+
+describe('Identity events for Profile', () => {
+  const event = (type: string, data: Record<string, unknown>) => ({ eventId: 'e', type, occurredAt: '2026-10-09T20:00:00.000Z', correlationId: 'c', data })
+  const deps = {
+    async revokeSessions() {},
+    async discardAccount() {},
+    async deleteAccount() {},
+    async assignRole() {},
+    async unassignRole() {},
+  }
+
+  it('forwards provisioning, departures and closure to Profile, unchanged, before the other members act', async () => {
+    const order: string[] = []
+    const forwarded: unknown[] = []
+    const handle = createIdentityEventHandler({
+      ...deps,
+      async deleteAccount(id) { order.push(`delete ${id}`) },
+      async applyProfileEvent(received) { forwarded.push(received); order.push(`profile ${received.type}`) },
+    })
+    const provisioned = event('identity.provisioned', { identityId: 'p', kind: 'person' })
+    await handle(provisioned)
+    await handle(event('membership.ended', { membershipId: 'm', identityId: 'p', groupId: 'g' }))
+    await handle(event('identity.paused', { identityId: 'p' }))
+    await handle(event('group.created', { groupId: 'g', lineage: ['g'], foundingOwnerId: 'o' }))
+    await handle(event('identity.closed', { identityId: 'p' }))
+    expect(forwarded[0]).toBe(provisioned)
+    expect(order).toEqual(['profile identity.provisioned', 'profile membership.ended', 'profile identity.closed', 'delete p'])
+  })
+
+  it('needs no Profile, and fails the event when Profile fails, so the relay delivers it again', async () => {
+    await expect(createIdentityEventHandler(deps)(event('identity.provisioned', { identityId: 'p' }))).resolves.toBeUndefined()
+    const failing = createIdentityEventHandler({ ...deps, async applyProfileEvent() { throw new Error('profile down') } })
+    await expect(failing(event('identity.closed', { identityId: 'p' }))).rejects.toThrow('profile down')
   })
 })
 

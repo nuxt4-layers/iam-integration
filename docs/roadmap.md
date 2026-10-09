@@ -4,7 +4,7 @@
 |---|---|---|
 | 1. Specification | Suite architecture, state models and cross-capability process specifications | In review |
 | 2. Contracts | The members' shapes the adapters need, structurally (`server/adapters/members.ts`); each member's own contract stays the source | In review |
-| 3. Reference adapters | Adapters between Identity, Authentication and Authorisation, Identity's event handling and credential recovery ([adapters](adapters.md)); Profile's when it exists | In review |
+| 3. Reference adapters | Adapters between Identity, Authentication and Authorisation, Identity's event handling and credential recovery ([adapters](adapters.md)); Identity's events forwarded to Profile | In review |
 | 4. Composition tests | End-to-end tests of each process's acceptance tests in `platform-test-harness` | Planned |
 
 ## Changes required in members
@@ -25,7 +25,7 @@
 | Identity (phase 1) | SCIM-compatible `externalId`; safe names; coarse errors; correlation identifiers; membership start and end dates; hashed, rate-limited invitations; conformance suite for its directory port | [Improvement register](improvement-register.md) items 5, 6, 12, 13, 20, 22, 1 |
 | Authorisation (phase 2) | Time-limited and just-in-time assignments; framework-free engine entry point; directory conformance suite | [Improvement register](improvement-register.md) items 7, 16, 1 |
 | Profile (phase 1) | OIDC standard claim names; safe names; fine-grained pause visibility controls | [Improvement register](improvement-register.md) items 17, 6; [Pausing and suspension](processes/pausing-and-suspension.md) |
-| Profile | Record, disclosure, departure data policy application, data-subject coordination | — |
+| Profile | Record, disclosure, departure data policy application, data-subject coordination. Record, disclosure, departures, encryption and the `/api/profile/*` endpoints are merged in [`nuxt4-layers/profile`](https://github.com/nuxt4-layers/profile); data-subject coordination is its phase 4 | — |
 
 ## Questions for the Identity design round
 
