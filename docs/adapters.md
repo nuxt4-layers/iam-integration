@@ -16,6 +16,14 @@
 
 Every adapter rejects when the member it calls fails, so the consuming member fails closed.
 
+## Invitations
+
+`invitationSenderFromIdentity({ joining, deliver, acceptanceUrl })` is the host's invitation endpoint's back end ([joining and leaving](processes/joining-and-leaving.md)). `send({ subject, groupId, kind, address, ... })` asks Identity's `getIdentityJoining().invite` for an invitation bound to nobody, and hands `deliver` (the host's notification capability) the address and a link to Identity's acceptance page with the token in the fragment. It looks the address up nowhere and keeps neither, so the answer is the same whatever the address. An address that is not printable or longer than 320 characters is refused before Identity is asked (`InvitationAddressError`); whether it can receive mail is delivery's to judge. If delivery refuses the message, the invitation is revoked and the call rejects, so no token is left that nobody holds.
+
+## Time
+
+The members' clock ports (`provideIdentityClock`, `provideAuthenticationClock`, `provideAuthorisationClock`, `provideProfileClock`) take `{ now(): Date }` directly, so they need no adapter: a host passes the same clock to each, or none ([architecture](architecture.md) §7). When the proposed `clock-service` exists, its adapter will live here.
+
 ## Roles
 
 Authorisation's wildcards never cover `high` or `critical` permissions. `rolesWithIdentityPermissions({ permissions: [...IDENTITY_PERMISSIONS, ...PROFILE_PERMISSIONS], roles: DEFAULT_AUTHORISATION_POLICY.roles })` names Identity's and Profile's in the built-in roles: every high and critical one in `owner`; the high ones that run a group in `administrator` (never ownership, approvals, reparenting, creating root groups, suspending identities or closing break-glass reviews). Pass the result to `provideAuthorisationPolicy({ roles })`.
@@ -35,6 +43,7 @@ Profile's `profile.suspended-people:view` (a suspended member's name, to the gro
 | `group.owners-changed` | Owners added get `owner`; owners removed lose it |
 | `membership.added` | The membership kind's role (`member`, or `viewer` for guests; configurable), and `owner` for an owner |
 | `membership.ended` | Every role in the group is removed |
+| `break-glass.used` | With `breakGlass`, Authentication's `rotateAuthenticationBreakGlass` removes the account's passkey and sessions, and the new enrolment link goes to the host's `deliver` for the platform's operators ([break-glass access](processes/break-glass.md)) |
 
 With `applyProfileEvent` (Profile's `applyProfileIdentityEvent`), the handler first passes `identity.provisioned`, `membership.ended`, `identity.closed`, `identity.paused` and `group.renamed` to Profile unchanged: Profile creates a person's empty record, keeps how a leaver is shown in the group, erases the record on closure (unless held), and marks the parts of data-subject requests these events complete. Profile is idempotent by event id, and a failure rejects the event so that Identity's relay delivers it again. Profile reads pausing and suspension from Identity's disclosure-context port, not from events.
 

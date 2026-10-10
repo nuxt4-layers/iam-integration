@@ -47,6 +47,23 @@ export interface IdentityEventHandlerDependencies {
    * done, for any erasure request it holds for the identity.
    */
   recordRequestPart?(input: { identityId: string, part: 'authentication' | 'authorisation', correlationId: string }): Promise<unknown>
+  /**
+   * Break-glass rotation (ADR-0007; docs/processes/break-glass.md): after
+   * every use, Authentication's `rotateAuthenticationBreakGlass` removes the
+   * account's passkey and sessions and issues a new one-time enrolment link,
+   * which the host delivers to the platform's operators. Without it,
+   * `break-glass.used` rotates nothing, and the host must rotate by hand.
+   */
+  breakGlass?: BreakGlassRotation
+}
+
+export interface BreakGlassRotation {
+  /** Authentication's `rotateAuthenticationBreakGlass`. */
+  rotate(input: { identityId: string, correlationId: string }): Promise<{ enrolmentToken: string, expiresAt: string }>
+  /** The absolute URL of Authentication's break-glass enrolment page; the token goes in its fragment. */
+  enrolmentUrl: string
+  /** The host's delivery of the new enrolment link to the platform's operators. Never logged. */
+  deliver(input: { identityId: string, link: string, expiresAt: string, correlationId: string }): Promise<void>
 }
 
 /** The erasures Authentication and Authorisation owe a closed identity, skipping held parts. */
@@ -127,6 +144,15 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
       case 'membership.ended':
         if (identityId && groupId) await deps.unassignRole({ principalId: identityId, groupId, roleId: null, actorPrincipalId })
         return
+      case 'break-glass.used': {
+        const breakGlassId = text(data.breakGlassIdentityId)
+        if (!breakGlassId || !deps.breakGlass) return
+        // Delivered at least once: a repeat rotates again, so only the latest link works.
+        const { enrolmentToken, expiresAt } = await deps.breakGlass.rotate({ identityId: breakGlassId, correlationId: event.correlationId })
+        const link = `${new URL(deps.breakGlass.enrolmentUrl).href}#${enrolmentToken}`
+        await deps.breakGlass.deliver({ identityId: breakGlassId, link, expiresAt, correlationId: event.correlationId })
+        return
+      }
       default:
         // Other events need nothing from Authentication or Authorisation.
     }

@@ -5,6 +5,7 @@
 | 1. Specification | Suite architecture, state models and cross-capability process specifications | Complete |
 | 2. Contracts | The members' shapes the adapters need, structurally (`server/adapters/members.ts`); each member's own contract stays the source | Complete |
 | 3. Reference adapters | Adapters between Identity, Authentication and Authorisation, Identity's event handling and credential recovery ([adapters](adapters.md)); Identity's events forwarded to Profile; Profile's request coordination and access decision, legal holds on closure, Profile's events | Complete |
+| 3a. Time, invitations and break-glass | The suite's one clock (architecture §7); invitation delivery (`invitationSenderFromIdentity`); break-glass rotation on `break-glass.used`; the [break-glass access](processes/break-glass.md) process | In review |
 | 4. Composition tests | End-to-end tests of each process's acceptance tests in `platform-test-harness` | In progress: provisioning, group lifecycle, paused memberships, pausing, Profile's disclosure, data-subject access, contact-detail verification and departures are covered |
 
 ## Changes required in members
@@ -20,6 +21,8 @@
 | Authentication | Enforce passkey-only sign-in for break-glass identities. Done in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | ADR-0007 |
 | Authentication | Write `authentication.credentials-recovered` (identity, time, recovery method as a code) after any credential recovery, for Identity's recovery hold. Done in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | [Recovery](processes/recovery.md); [Architecture](architecture.md) §4 |
 | Authentication | `exportAuthenticationData`: sign-in identifiers, factor types and times, sessions; never secrets or tokens. Done in nuxt4-layers/authentication#20 | [Data-subject requests](processes/data-subject-requests.md) |
+| All members | A clock port (`provide*Clock`, `{ now(): Date }`, the system clock without one) from which every time the member keeps or judges comes; Identity's database transactions run at the clock's time | [Architecture](architecture.md) §7 |
+| Authentication | Break-glass accounts: `provisionAuthenticationBreakGlass` and `rotateAuthenticationBreakGlass` (server-only), a one-time passkey enrolment page, passkey-only enforcement independent of Identity's standing | [Break-glass access](processes/break-glass.md); ADR-0007 |
 | Authentication | Never a source of profile data: store no provider-supplied name or picture, and blank those stored before. Done in [nuxt4-layers/authentication#18](https://github.com/nuxt4-layers/authentication/pull/18) | [Architecture](architecture.md) §1 |
 | Authentication | Refuse sign-in and session refresh for `suspended` and `closed` identities; revoke sessions on events. Done in [nuxt4-layers/authentication#19](https://github.com/nuxt4-layers/authentication/pull/19) | [Architecture](architecture.md) §4 |
 | Identity | Everything in the state models and processes. Phases 1 to 5 (contract, storage, governance and approvals, invitations, lifecycle and recovery, administration API, default pages) are merged in [`nuxt4-layers/identity`](https://github.com/nuxt4-layers/identity); its roadmap records Profile's dependencies on Identity | — |

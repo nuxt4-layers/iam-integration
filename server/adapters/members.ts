@@ -68,6 +68,28 @@ export interface IdentityEventLike {
   data: Record<string, unknown>
 }
 
+/** The invitation Identity's `getIdentityJoining().invite` creates: its token is returned once. */
+export interface IdentityInvitationLike {
+  invitationId: string
+  token: string
+  expiresAt: string
+  requiresConfirmation: boolean
+}
+
+/** Identity's joining (`getIdentityJoining()`): what invitation delivery needs of it. */
+export interface IdentityJoiningLike {
+  invite(input: {
+    subject: IdentitySubjectLike
+    groupId: string
+    kind: 'member' | 'guest'
+    inviteeIdentityId?: string | null
+    membershipStartsAt?: string | null
+    membershipEndsAt?: string | null
+    correlationId: string
+  }): Promise<IdentityInvitationLike>
+  revoke(input: { subject: IdentitySubjectLike, invitationId: string, correlationId: string }): Promise<unknown>
+}
+
 // ---------------------------------------------------------------------------
 // Authentication
 // ---------------------------------------------------------------------------
