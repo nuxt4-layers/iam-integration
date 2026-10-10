@@ -40,6 +40,7 @@ Each row is a port declared by the consuming member and supplied by the host.
 | Profile | Access decision | Authorisation | Whether a viewer holds one of Profile's permissions on a group: today `profile.suspended-people:view`, under which a group's administrators see its suspended members by name |
 | Profile | Request coordination | Identity, Authentication, Authorisation | Each member's part of a data-subject access request, from its server-only export ([data-subject requests](processes/data-subject-requests.md)) |
 | Domain capabilities | Display names | Profile | Names to show for a list of identity identifiers, filtered by Profile's disclosure rules for the viewer |
+| Each member | Legal holds | Identity, Profile | Whether a legal hold covers a group or tenant (Identity) or the member's part of a person's data (Profile), before retention or disposal deletes anything (§8) |
 | Domain capabilities | Visible scopes | Authorisation | The groups in a tenant whose information the caller may read with a given permission (ADR-0006) |
 
 A port that fails rejects. Every consumer fails closed: an unreachable directory denies access, an unreachable Profile shows no name rather than a stale one.
@@ -57,8 +58,15 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `identity.closure-requested`, `identity.closure-cancelled`, `identity.closed` | Identity | Authentication, Profile, Authorisation, domain capabilities |
 | `membership.added`, `.paused`, `.resumed`, `.suspended`, `.reinstated`, `.dates-changed`, `.ended` | Identity | Authorisation (invalidate caches; apply the default or guest role by kind), Profile (disclosure), domain capabilities |
 | `group.created`, `group.renamed`, `group.reparented`, `group.owners-changed`, `group.orphaned`, `group.recovered`, `group.archived` | Identity | Authorisation (invalidate caches; assign and remove `owner`; review `group-and-descendants` assignments on reparenting) |
+| `group.deleted`, `group.disposal-due` | Identity | Authorisation and Profile (dispose of the group's part when disposal is due), domain capabilities ([group deletion](processes/group-deletion.md)) |
+| `group.disposal-overdue`, `tenant.disposal-overdue` | Identity | Operators' tooling |
 | `group.settings-changed` | Identity | Profile (departure data policy), Authorisation; notification capabilities (a change of [safety period](processes/README.md#safety-periods)) |
-| `tenant.created`, `tenant.closing` | Identity | All members |
+| `tenant.created`, `tenant.closing`, `tenant.closing-cancelled` | Identity | All members; notification capabilities |
+| `tenant.closed`, `tenant.disposal-due` | Identity | Authorisation (dispose of the tenant's custom roles when disposal is due) ([tenant lifecycle](processes/tenant-lifecycle.md)) |
+| `tenant.exported` | Identity | Audit |
+| `identity.rehoming-scheduled`, `identity.rehoming-cancelled` | Identity | Notification capabilities (tell the person) |
+| `identity.rehomed` | Identity | Profile (the record's data region) |
+| `legal-hold.placed`, `legal-hold.ended` | Identity | Audit (holds on groups and tenants) |
 | `break-glass.used`, `break-glass.review-closed` | Identity | Host alerting to every operator and affected owner; audit |
 | `join-request.created`, `join-request.decided` | Identity | Notification capabilities (the group's administrators; the person who asked) |
 | `invitation.accepted`, `invitation.refused` | Identity | Notification capabilities (the inviter; administrators when confirmation is needed) |
@@ -71,6 +79,8 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `profile.contact-verified` | Profile | Audit; capabilities that may now use a verified contact detail, through Profile |
 | `authentication.account-deleted` | Authentication | Audit |
 | `authorisation.principal-erased` | Authorisation | Audit |
+| `authorisation.group-disposed`, `authorisation.tenant-disposed`, `profile.group-disposed`, and each domain capability's `<capability>.group-disposed` | Each disposing member | Identity (the disposal's confirmations, through the host's [handler](adapters.md#disposal-confirmations)) |
+| `<member>.retention-applied` | Each member | Audit ([retention](processes/retention.md)) |
 | `authentication.sessions-revoked` | Authentication | Audit |
 | `authentication.credentials-recovered` | Authentication | Identity (the recovery hold, [recovery](processes/recovery.md)) |
 
@@ -103,5 +113,12 @@ Each member reads the current time from a clock port the host may supply: `provi
 - **Not the engines' own time.** Time the members delegate to a library stays on the system clock: Authentication's session lifetime, rate limits and one-time-password steps, which an authenticator app computes from real time.
 - **Fails closed.** A clock that throws, or answers anything but a valid date, fails the operation as the member's `unavailable`; a member never falls back to another time.
 - **A clock is trusted like a key.** Whoever supplies it can make a safety period, a closure grace period or a legal hold end early. Only the host composes it, from server code; no request can set or move it. A clock that can be moved is for tests only: the host must refuse to compose one outside a test mode, and it may only move forward. Each member records this in its threat model.
+
+## 8. Retention and disposal
+
+- **Legal holds are kept where their subject is.** Profile holds a person's data, by part ([data-subject requests](processes/data-subject-requests.md#legal-holds)); Identity holds groups and tenants, which are not personal data ([group deletion](processes/group-deletion.md#legal-holds-on-groups-and-tenants)). A member asks both through the legal-hold port before it deletes anything a hold might cover, and keeps the record when it cannot tell.
+- **Disposal follows deletion.** A deleted group or closed tenant confers nothing at once; its information is disposed of in every member when no hold covers it, each member confirming from its own outbox, and Identity tracking the confirmations and raising any that are overdue.
+- **Identity keeps tombstones** of deleted groups and closed tenants and identities: identifiers are never reused, and records naming them still resolve.
+- **Retention is each member's.** Each member declares schedules for what it keeps once its purpose is over, within bounds, in the shape [retention](processes/retention.md) sets.
 
 A host may run without Profile. Display-name lookups then return no names, and data-subject requests cover only what the other members hold.

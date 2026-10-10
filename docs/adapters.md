@@ -15,6 +15,8 @@
 | `profileAccessDecisionFromAuthorisation({ authorise })` | Profile's `ProfileAccessDecision` | Authorisation's `authorise` | The same group resource, for Profile's permissions (`profile.suspended-people:view`); every refusal, insufficient assurance included, is `false`, so Profile shows what it shows anyone |
 | `profileRequestCoordinatorFromMembers({ exportIdentity, exportAuthentication, exportAuthorisation })` | Profile's `ProfileRequestCoordinator` | Identity's `exportIdentityData`, Authentication's `exportAuthenticationData`, Authorisation's `exportAuthorisationData` | One member's part of an access request ([data-subject requests](processes/data-subject-requests.md)): the identity identifier becomes the principal identifier for Authentication and Authorisation; a member the host does not compose holds nothing (null); a failing member rejects its own part only |
 
+| `legalHoldsFromMembers({ part, groupOrTenantHeld, personHeldParts })` | Each member's legal-hold port, for its retention and disposal ([retention](processes/retention.md)) | Identity's `identityLegalHoldCovers` and Profile's `profileLegalHoldParts` | `covers({ kind, id })`: a group or tenant asks Identity (a group is covered through its tenant too); a person asks Profile whether the asking member's `part` is held. Without Profile no person is held, since only Profile places such holds |
+
 Every adapter rejects when the member it calls fails, so the consuming member fails closed.
 
 ## Invitations
@@ -44,9 +46,11 @@ Profile's `profile.suspended-people:view` (a suspended member's name, to the gro
 | `group.owners-changed` | Owners added get `owner`; owners removed lose it |
 | `membership.added` | The group's default role for the membership kind, from Authorisation's `authorisationDefaultRoles` (`defaultRoles`), or else `member`, or `viewer` for guests (configurable); and `owner` for an owner |
 | `membership.ended` | Every role in the group is removed |
+| `group.deleted`, `group.disposal-due` | With `disposeGroup`, Authorisation's `disposeAuthorisationGroup`, when disposal is due ([below](#group-and-tenant-disposal)) |
+| `tenant.closed`, `tenant.disposal-due` | With `disposeTenant`, Authorisation's `disposeAuthorisationTenant`, when disposal is due |
 | `break-glass.used` | With `breakGlass`, Authentication's `rotateAuthenticationBreakGlass` removes the account's passkey and sessions, and the new enrolment link goes to the host's `deliver` for the platform's operators ([break-glass access](processes/break-glass.md)) |
 
-With `applyProfileEvent` (Profile's `applyProfileIdentityEvent`), the handler first passes `identity.provisioned`, `membership.ended`, `identity.closed`, `identity.paused` and `group.renamed` to Profile unchanged: Profile creates a person's empty record, keeps how a leaver is shown in the group, erases the record on closure (unless held), and marks the parts of data-subject requests these events complete. Profile is idempotent by event id, and a failure rejects the event so that Identity's relay delivers it again. Profile reads pausing and suspension from Identity's disclosure-context port, not from events.
+With `applyProfileEvent` (Profile's `applyProfileIdentityEvent`), the handler first passes `identity.provisioned`, `membership.ended`, `identity.closed`, `identity.paused`, `group.renamed`, `group.deleted`, `group.disposal-due` and `identity.rehomed` to Profile unchanged: Profile creates a person's empty record, keeps how a leaver is shown in the group, erases the record on closure (unless held), marks the parts of data-subject requests these events complete, disposes of a deleted group's departure records and pseudonyms when disposal is due, and places a re-homed person's record in their new home tenant's data region. Profile is idempotent by event id, and a failure rejects the event so that Identity's relay delivers it again. Profile reads pausing and suspension from Identity's disclosure-context port, not from events.
 
 Profile's notification port (`ProfileNotifier`, for contact-detail verification codes) is the host's own delivery, not another member's. Profile's other ports need no adapter: Identity's `getIdentityDisclosureContext()` already has the shape of `ProfileDisclosureContext`, and `identitySubjectResolverFromAuthentication` returns the subject Profile's `ProfileSubjectResolver` expects.
 
@@ -57,6 +61,18 @@ Role changes and erasures are recorded with the actor `iam-integration`.
 With `heldParts` (Profile's `profileLegalHoldParts`), the handler reads, on `identity.closed`, which parts of the person's data are under legal hold ([data-subject requests](processes/data-subject-requests.md#legal-holds)), and erases only the others. If the holds cannot be read, the event fails and is delivered again: nothing that might be held is erased. With `recordRequestPart` (Profile's `recordProfileRequestPart`), it tells Profile each erasure is done, for any erasure request Profile holds.
 
 `createProfileEventHandler({ deleteAccount, erasePrincipal, recordRequestPart })` handles Profile's events. On `profile.legal-hold-ended` for an identity that has closed, it carries out the erasures the hold deferred, for the parts no hold covers any more (`released`). Profile erases its own part itself.
+
+### Group and tenant disposal
+
+Identity says in `group.deleted` and `tenant.closed` whether disposal is `due` or `deferred` by one of its legal holds, and writes `group.disposal-due` or `tenant.disposal-due` when the hold ends ([group deletion](processes/group-deletion.md), [tenant lifecycle](processes/tenant-lifecycle.md)). The handler therefore needs no hold lookup of its own: it calls `disposeGroup` or `disposeTenant` only when disposal is due, and never while it is deferred. A failure rejects the event, so the relay delivers it again; disposal is idempotent. A deleted group's memberships end before `group.deleted` with `membership.ended` as usual, so its roles are removed then too.
+
+## Disposal confirmations
+
+`createDisposalConfirmationHandler({ record })` takes events from every disposing member's relay (Authorisation, Profile and domain capabilities) and passes each `<member>.group-disposed` (`groupId`) and `<member>.tenant-disposed` (`tenantId`) to Identity's `recordIdentityDisposal`, naming the member by the event's prefix. Identity decides whether it expected that member (its `disposalParticipants`), keeps the confirmation, and raises a disposal not confirmed within 7 days. Other events, and confirmations claiming to be Identity's own, are ignored.
+
+## Tenant export
+
+`tenantExportFromMembers({ exportIdentityTenant, exportAuthorisationTenant })` is the back end of the host's governance export endpoint during a tenant's notice period ([tenant lifecycle](processes/tenant-lifecycle.md#governance-export)). `exportTenant({ subject, tenantId, correlationId })` asks Identity first, which decides whether the subject may have it (an owner of the tenant's root group, at `aal2`, while the tenant is `closing`) and rejects otherwise; only then is Authorisation's server-only part asked for. It returns both parts unchanged, or null for a tenant Identity does not know; any failure rejects the whole export. It holds identifiers, never personal data, and the adapter keeps nothing.
 
 ## Credential recovery
 

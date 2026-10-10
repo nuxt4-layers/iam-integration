@@ -20,9 +20,9 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 
 | # | Improvement | Owner | Status | Where recorded or planned |
 |---|---|---|---|---|
-| 7 | Time-limited role assignments (`expiresAt`) and just-in-time elevation for critical roles | Authorisation | Planned | Authorisation phase 2 schema |
+| 7 | Time-limited role assignments (`expiresAt`) and just-in-time elevation for critical roles | Authorisation | Recorded in part | Time-limited assignments in [access administration](processes/access-administration.md); just-in-time elevation planned |
 | 8 | Separation of duties: nobody grants themselves a role or access at any risk level (outside their own personal group); two-person rule for `high` and `critical` | Authorisation, Identity | Recorded | ADR-0005 §2.4; [Approvals](processes/approvals.md) |
-| 9 | Access reviews: who holds what, since when, for owners to re-confirm or remove | Authorisation, Identity | Planned | Authorisation phase 3 (administration) |
+| 9 | Access reviews: who holds what, since when, for owners to re-confirm or remove | Authorisation, Identity | Recorded | [Access administration](processes/access-administration.md) |
 | 10 | Break-glass emergency access | Host procedure, Authentication, Identity | Recorded | ADR-0007: passkey-only, no standing privileges, suspension and orphaned-group recovery only, alert and mandatory review on every use |
 | 11 | Row-level security on tenant- and group-isolated tables, with `SET LOCAL` and a non-owner runtime role | Identity, Authorisation | Recorded | ADR-0006 §5; Data Store Security Standard §3.5 |
 | 12 | Coarse errors in Identity: "not found" and "forbidden" never reveal whether a group, member or account exists | Identity | Planned | Identity phase 1 contract (error codes), matching Authorisation; invitations already specified in [Joining and leaving](processes/joining-and-leaving.md) |
@@ -37,7 +37,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | 16 | Framework-free decision engine entry point | Authorisation | Planned | Authorisation phase 2 packaging |
 | 17 | Standard OIDC claim names (`name`, `given_name`, `family_name`, `preferred_username`, `locale`, `zoneinfo`) in Profile's record. Any import of a provider's claims is a Profile workflow with the person's consent; Authentication never stores or seeds them | Profile (moved from Identity: personal data lives in Profile) | Planned | Profile phase 1 contract |
 | 18 | Mapping identity-provider group claims to memberships, only by explicit host configuration | Identity, iam-integration | Planned | After Identity phase 1; never automatic |
-| 19 | Roles and policy as versioned JSON for review and promotion between environments | Authorisation | Planned | Authorisation phase 3 |
+| 19 | Roles and policy as versioned JSON for review and promotion between environments | Authorisation | Recorded | [Access administration](processes/access-administration.md) |
 
 ## Functionality
 
@@ -78,7 +78,7 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | 8 | The grant workflow records requester, beneficiary, risk, justification, approvals, expiry and escalation | [Approvals](processes/approvals.md) |
 | 11 | Row-level security is required, not optional, and security must extend to other kinds of store (graph, search, analytics) through the visible-scopes query and derived-store rules | ADR-0006; Data Store Security Standard |
 | New | `paused` state controlled by the person, account-wide or per group, with finer visibility controls in Profile; a paused member can view, is hidden and receives nothing; roles are kept but inactive; groups may limit pausing within the group but never prevent an account-wide pause | ADR-0005 §2.5–2.6; [State models](states.md); [Pausing and suspension](processes/pausing-and-suspension.md) |
-| New | Workflows to specify: account lifecycle, membership, privilege, data-subject rights, retention, groups and tenants; compliance across jurisdictions through per-tenant policy packs and data regions | [Processes](processes/README.md), including planned processes |
+| New | Workflows to specify: account lifecycle, membership, privilege, data-subject rights, retention, groups and tenants; compliance across jurisdictions through per-tenant policy packs and data regions | [Processes](processes/README.md); retention, group deletion and the tenant lifecycle in [retention](processes/retention.md), [group deletion](processes/group-deletion.md) and [tenant lifecycle](processes/tenant-lifecycle.md); jurisdiction policy packs still planned |
 
 ## Decided (formerly open)
 

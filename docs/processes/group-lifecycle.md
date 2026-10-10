@@ -31,6 +31,8 @@ The founding owner is an ordinary owner afterwards: the title confers nothing be
 2. Existing memberships end or remain read-only according to the group's archive setting; ended memberships follow [joining and leaving](joining-and-leaving.md) for departure data.
 3. Domain capabilities treat the group's information as read-only.
 
+An archived group may later be deleted, which disposes of its information in every member ([group deletion](group-deletion.md)).
+
 ## Acceptance tests
 
 - The founding owner holds the `owner` role in the new group and nothing in its parent.

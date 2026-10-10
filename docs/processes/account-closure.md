@@ -14,11 +14,11 @@ The person is not the last active owner of any group. Identity lists such groups
 2. **Authentication** revokes every session. Sign-in during the grace period leads only to cancellation.
 3. **Profile** hides the person from everyone and offers an export ([data-subject requests](data-subject-requests.md)).
 4. The person may cancel during the grace period, after reauthentication. **Identity** restores the previous state and writes `identity.closure-cancelled`.
-5. At the end of the grace period, **Identity** ends every membership (each `membership.ended`), sets the identity `closed` and writes `identity.closed`.
+5. At the end of the grace period, **Identity** ends every membership (each `membership.ended`), deletes the personal group ([group deletion](group-deletion.md)), sets the identity `closed` and writes `identity.closed`.
 6. **Profile** applies each group's departure data policy, then anonymises the person by deleting their record and key and writes `profile.anonymised`, unless a [legal hold](data-subject-requests.md#legal-holds) covers Profile's part.
 7. **Authentication** deletes credentials and the sign-in identifier (`deleteAuthenticationAccount`), unless a legal hold covers its part.
 8. **Authorisation** removes the identity's assignments and grants (`eraseAuthorisationPrincipal`, `authorisation.principal-erased`), unless a legal hold covers its part.
-9. The personal group and its information are deleted, unless the person exported or transferred them first.
+9. The personal group's information is disposed of in every member and domain capability on `group.deleted`, as for any [deleted group](group-deletion.md), unless a hold on the group or its tenant defers it. The person exports or transfers what they want to keep before the grace period ends.
 
 ## Failure handling
 
