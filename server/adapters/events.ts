@@ -29,8 +29,14 @@ export interface IdentityEventHandlerDependencies {
    * by event id.
    */
   applyProfileEvent?(event: IdentityEventLike): Promise<unknown>
-  /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. */
+  /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. Ignored when `defaultRoles` is given. */
   membershipRoles?: { member: string | null, guest: string | null }
+  /**
+   * Authorisation's `authorisationDefaultRoles`: the group's own default role
+   * for a new member and a new guest (docs/processes/access-administration.md).
+   * Without it, `membershipRoles` applies to every group.
+   */
+  defaultRoles?(groupId: string): Promise<{ member: string | null, guest: string | null }>
   /**
    * Authorisation's `eraseAuthorisationPrincipal`: removes a closed
    * identity's assignments and grants (account closure step 6).
@@ -136,7 +142,8 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
       }
       case 'membership.added': {
         if (!identityId || !groupId) return
-        const role = data.kind === 'guest' ? roles.guest : roles.member
+        const defaults = deps.defaultRoles ? await deps.defaultRoles(groupId) : roles
+        const role = data.kind === 'guest' ? defaults.guest : defaults.member
         if (role) await deps.assignRole({ principalId: identityId, groupId, roleId: role, actorPrincipalId })
         if (data.owner === true) await deps.assignRole({ principalId: identityId, groupId, roleId: 'owner', actorPrincipalId })
         return

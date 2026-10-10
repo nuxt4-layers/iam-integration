@@ -9,6 +9,7 @@ export { groupResource, identityAccessDecisionFromAuthorisation, identityApprova
 export { authorisationDirectoryFromIdentity } from './directory'
 export { createIdentityEventHandler, createProfileEventHandler, IDENTITY_EVENT_ACTOR } from './events'
 export type { BreakGlassRotation, IdentityEventHandlerDependencies } from './events'
+export { authorisationGovernanceFromIdentity } from './governance'
 export { newCorrelationId, uuidv7 } from './identifiers'
 export { InvitationAddressError, invitationSenderFromIdentity } from './invitations'
 export type { InvitationDeliver, InvitationMessage, InvitationSender } from './invitations'

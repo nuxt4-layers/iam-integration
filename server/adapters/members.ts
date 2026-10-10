@@ -90,6 +90,42 @@ export interface IdentityJoiningLike {
   revoke(input: { subject: IdentitySubjectLike, invitationId: string, correlationId: string }): Promise<unknown>
 }
 
+export type RequiredApproversLike = { low: 0 | 1, medium: 0 | 1, high: 1 | 2, critical: 1 | 2 }
+
+export interface SafetyPeriodsInForceLike {
+  publishedDelayHighHours: number
+  publishedDelayCriticalHours: number
+  approvalExpiryDays: number
+  recoveryHoldHours: number
+}
+
+/** A group as Identity's access governance describes it to Authorisation, for one requester. */
+export interface IdentityGovernedGroupLike {
+  groupId: string
+  tenantId: string
+  kind: 'standard' | 'personal'
+  state: 'active' | 'orphaned' | 'archived'
+  parentGroupId: string | null
+  rootGroupId: string
+  /** For a personal group: whose it is. */
+  personalOfIdentityId: string | null
+  approvals: { required: RequiredApproversLike, referenceRequired: boolean }
+  safetyPeriods: SafetyPeriodsInForceLike
+  requester: {
+    /** The end of the requester's recovery hold, if one is running. */
+    recoveryHoldUntil: string | null
+    /** Identities the requester controls (service identities they created), which never approve for them. */
+    controls: readonly string[]
+  }
+}
+
+/** Identity's access governance (`getIdentityAccessGovernance()`), from its own record, at `strong` consistency. */
+export interface IdentityAccessGovernanceLike {
+  describeGroup(input: { groupId: string, identityId: string, correlationId: string }): Promise<IdentityGovernedGroupLike | null>
+  isOwner(input: { identityId: string, groupId: string }): Promise<boolean>
+  countOwners(input: { groupId: string, excluding: readonly string[] }): Promise<number>
+}
+
 // ---------------------------------------------------------------------------
 // Authentication
 // ---------------------------------------------------------------------------
@@ -157,6 +193,13 @@ export type IdentityExportLike = (input: { identityId: string, correlationId: st
 
 /** Authentication's `exportAuthenticationData` and Authorisation's `exportAuthorisationData`: null when they hold nothing. */
 export type PrincipalExportLike = (input: { principalId: string, correlationId: string }) => Promise<unknown | null>
+
+/** Authorisation's governance port (`provideAuthorisationGovernance`): Identity's facts in Authorisation's vocabulary. */
+export interface AuthorisationGovernanceLike {
+  describeGroup(input: { groupId: string, principalId: string, correlationId: string }): Promise<(Omit<IdentityGovernedGroupLike, 'personalOfIdentityId'> & { personalOfPrincipalId: string | null }) | null>
+  isOwner(input: { principalId: string, groupId: string }): Promise<boolean>
+  countOwners(input: { groupId: string, excluding: readonly string[] }): Promise<number>
+}
 
 // ---------------------------------------------------------------------------
 // Profile

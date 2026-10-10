@@ -9,6 +9,7 @@ Processes that span more than one IAM member. A process that touches one member 
 | [Joining and leaving](joining-and-leaving.md) | Invitation, request, removal, leaving | Identity, Authorisation, Profile |
 | [Pausing and suspension](pausing-and-suspension.md) | The person pauses; an administrator suspends | Identity, Authentication, Authorisation, Profile |
 | [Approvals](approvals.md) | A `high` or `critical` governance, role or grant change | Identity, Authorisation, Authentication |
+| [Access administration](access-administration.md) | Roles assigned, resources shared, default roles, access reviews, custom roles | Authorisation, Identity, Profile |
 | [Account closure](account-closure.md) | The person closes their account | All |
 | [Data-subject requests](data-subject-requests.md) | Access, correction, export, erasure or objection | All, coordinated by Profile |
 | [Recovery](recovery.md) | Lost credentials; orphaned group | Authentication, Identity, Authorisation |

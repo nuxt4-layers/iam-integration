@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticationIdentityFromIdentity,
   authorisationDirectoryFromIdentity,
+  authorisationGovernanceFromIdentity,
   createAuthenticationEventHandler,
   createIdentityEventHandler,
   createProfileEventHandler,
@@ -486,5 +487,55 @@ describe('break-glass rotation', () => {
 
   it('does nothing without a rotation composed', async () => {
     await expect(createIdentityEventHandler(base)(used('bg') as never)).resolves.toBeUndefined()
+  })
+})
+
+describe('Authorisation governance from Identity', () => {
+  const group = {
+    groupId: 'g', tenantId: 't', kind: 'personal' as const, state: 'active' as const, parentGroupId: null, rootGroupId: 'g', personalOfIdentityId: 'p',
+    approvals: { required: { low: 0 as const, medium: 0 as const, high: 1 as const, critical: 2 as const }, referenceRequired: false },
+    safetyPeriods: { publishedDelayHighHours: 72, publishedDelayCriticalHours: 168, approvalExpiryDays: 7, recoveryHoldHours: 72 },
+    requester: { recoveryHoldUntil: null, controls: ['s'] },
+  }
+
+  it('passes Identity\'s facts through, with principals for identities', async () => {
+    const asked: unknown[] = []
+    const governance = authorisationGovernanceFromIdentity({
+      governance: {
+        async describeGroup(input) { asked.push(input); return input.groupId === 'g' ? group : null },
+        async isOwner(input) { asked.push(input); return input.identityId === 'o' },
+        async countOwners(input) { asked.push(input); return 2 },
+      },
+    })
+    const { personalOfIdentityId: _, ...rest } = group
+    expect(await governance.describeGroup({ groupId: 'g', principalId: 'p', correlationId: 'c' })).toEqual({ ...rest, personalOfPrincipalId: 'p' })
+    expect(await governance.describeGroup({ groupId: 'x', principalId: 'p', correlationId: 'c' })).toBeNull()
+    expect(await governance.isOwner({ principalId: 'o', groupId: 'g' })).toBe(true)
+    expect(await governance.countOwners({ groupId: 'g', excluding: ['p'] })).toBe(2)
+    expect(asked).toEqual([
+      { groupId: 'g', identityId: 'p', correlationId: 'c' },
+      { groupId: 'x', identityId: 'p', correlationId: 'c' },
+      { identityId: 'o', groupId: 'g' },
+      { groupId: 'g', excluding: ['p'] },
+    ])
+  })
+
+  it('rejects when Identity fails, so Authorisation refuses the change', async () => {
+    const governance = authorisationGovernanceFromIdentity({ governance: { async describeGroup() { throw new Error('down') }, async isOwner() { return false }, async countOwners() { return 0 } } })
+    await expect(governance.describeGroup({ groupId: 'g', principalId: 'p', correlationId: 'c' })).rejects.toThrow('down')
+  })
+})
+
+describe('default roles from Authorisation', () => {
+  it('assigns the group\'s own default role for the membership kind', async () => {
+    const assigned: unknown[] = []
+    const handle = createIdentityEventHandler({
+      async revokeSessions() {}, async discardAccount() {}, async deleteAccount() {}, async unassignRole() {},
+      async assignRole(input) { assigned.push(input) },
+      async defaultRoles(groupId) { return groupId === 'g' ? { member: 'contributor', guest: null } : { member: 'member', guest: 'viewer' } },
+    })
+    await handle({ type: 'membership.added', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { identityId: 'p', groupId: 'g', kind: 'member', owner: false } } as never)
+    await handle({ type: 'membership.added', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { identityId: 'q', groupId: 'g', kind: 'guest', owner: false } } as never)
+    expect(assigned).toEqual([{ principalId: 'p', groupId: 'g', roleId: 'contributor', actorPrincipalId: 'iam-integration' }])
   })
 })
