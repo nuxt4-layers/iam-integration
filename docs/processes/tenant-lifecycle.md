@@ -35,7 +35,7 @@ A tenant is an isolation boundary with a jurisdiction and a data region (Identit
 2. **Identity** writes `identity.rehoming-scheduled` for every identity whose home tenant it is, with the date, so that the host's notification capability tells each person, without Identity holding an address. A person who wants a copy of what their personal group holds makes a data-subject access request ([data-subject requests](data-subject-requests.md)) during the notice period.
 3. **The owners of the tenant's root group** may download the tenant's governance export ([below](#governance-export)) during the notice period.
 4. At the end of the notice period, **Identity** re-homes each of those identities to the host's default home tenant and writes `identity.rehomed` for each. If both tenants have the same data region, the personal group moves with the person and keeps its identifier. Otherwise Identity gives the person a new, empty personal group in the new home tenant, and deletes the old one ([group deletion](group-deletion.md)).
-5. **Profile**, on `identity.rehomed` through the host's [event handler](../adapters.md#events), places the person's record in the new home tenant's data region if it differs.
+5. **Profile** needs nothing: it keeps every record in the one store the host composes, whatever the home tenant. A host that keeps people's records in separate data regions composes one Profile per region and moves the record itself; Profile does not yet place records by region.
 6. **Identity** closes every service identity owned by a group in the tenant (`identity.closed`, through [account closure](account-closure.md) without a grace period, since no person is behind it), then archives and deletes every group in the tenant, from the leaves up, without further approval. Each group's members leave it (each `membership.ended`, under the group's departure data policy), and each group follows [group deletion](group-deletion.md) from its first step.
 7. **Identity** sets the tenant `closed` and writes `tenant.closed`, with `disposal: 'due'`, or `'deferred'` when a hold covers the tenant.
 8. **Authorisation**, through the host's [event handler](../adapters.md#group-and-tenant-disposal) on `tenant.closed` with disposal due, or on `tenant.disposal-due` (`disposeAuthorisationTenant`), removes the tenant's custom roles and any pending change left for it, and writes `authorisation.tenant-disposed`. Identity records the confirmation as for a group.
@@ -74,7 +74,7 @@ The host's endpoint assembles it through the [adapter](../adapters.md#tenant-exp
 | `tenant.disposal-due`, `tenant.disposal-overdue` | Identity | Tenant; for overdue, the members still to confirm |
 | `tenant.exported` | Identity | Tenant, the requester |
 | `identity.rehoming-scheduled`, `identity.rehoming-cancelled` | Identity | Identity, tenant, date |
-| `identity.rehomed` | Identity | Identity, old and new home tenant, old and new personal group |
+| `identity.rehomed` | Identity | Identity, old and new home tenant, old and new personal group (for notification and audit) |
 | `authorisation.tenant-disposed` | Authorisation | Tenant |
 
 ## Acceptance tests

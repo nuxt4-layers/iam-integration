@@ -25,9 +25,9 @@ export interface IdentityEventHandlerDependencies {
    * receives `identity.provisioned` (an empty record for a person),
    * `membership.ended` (how the leaver is shown in the group),
    * `identity.closed` (erasure), `identity.paused` and `group.renamed`
-   * (parts of data-subject requests done), `group.deleted` and
-   * `group.disposal-due` (a deleted group's disposal) and `identity.rehomed`
-   * (the record's data region), unchanged. Profile is idempotent by event id.
+   * (parts of data-subject requests done), and `group.deleted` and
+   * `group.disposal-due` (a deleted group's disposal), unchanged. Profile is
+   * idempotent by event id.
    */
   applyProfileEvent?(event: IdentityEventLike): Promise<unknown>
   /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. Ignored when `defaultRoles` is given. */
@@ -106,7 +106,7 @@ async function eraseClosedIdentity(
  * The Identity events Profile acts on (Profile contract §8): records,
  * departures and erasure, the evidence that closes a data-subject request's
  * restriction (`identity.paused`) and correction (`group.renamed`) parts,
- * a deleted group's disposal, and re-homing.
+ * and a deleted group's disposal.
  */
 const PROFILE_EVENTS: ReadonlySet<string> = new Set([
   'identity.provisioned',
@@ -116,7 +116,6 @@ const PROFILE_EVENTS: ReadonlySet<string> = new Set([
   'group.renamed',
   'group.deleted',
   'group.disposal-due',
-  'identity.rehomed',
 ])
 
 /** The actor recorded on role changes made because of Identity's events. */

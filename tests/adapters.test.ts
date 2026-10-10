@@ -585,10 +585,10 @@ describe('group and tenant disposal', () => {
     expect(log).toEqual(['dispose tenant t c', 'dispose tenant u c'])
   })
 
-  it('gives Profile re-homing, and Authorisation nothing', async () => {
+  it('needs nothing from Profile or Authorisation on re-homing', async () => {
     const { log, handle } = setup()
     await handle(event('identity.rehomed', { identityId: 'p', fromTenantId: 't', toTenantId: 'u' }))
-    expect(log).toEqual(['profile identity.rehomed'])
+    expect(log).toEqual([])
   })
 
   it('rejects when Authorisation fails, so the relay delivers the event again', async () => {

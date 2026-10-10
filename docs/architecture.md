@@ -65,7 +65,7 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `tenant.closed`, `tenant.disposal-due` | Identity | Authorisation (dispose of the tenant's custom roles when disposal is due) ([tenant lifecycle](processes/tenant-lifecycle.md)) |
 | `tenant.exported` | Identity | Audit |
 | `identity.rehoming-scheduled`, `identity.rehoming-cancelled` | Identity | Notification capabilities (tell the person) |
-| `identity.rehomed` | Identity | Profile (the record's data region) |
+| `identity.rehomed` | Identity | Notification capabilities; audit. Profile keeps every record in the one store the host composes, so re-homing needs nothing from it |
 | `legal-hold.placed`, `legal-hold.ended` | Identity | Audit (holds on groups and tenants) |
 | `break-glass.used`, `break-glass.review-closed` | Identity | Host alerting to every operator and affected owner; audit |
 | `join-request.created`, `join-request.decided` | Identity | Notification capabilities (the group's administrators; the person who asked) |
