@@ -49,7 +49,7 @@ Records whose subject remains and which are needed for as long as it does are no
 - **Never before a process needs it.** An outbox event is deleted only once delivered; a governance change only once decided and its digest no longer awaited; a credential-recovery record not before the longest recovery hold in force has passed.
 - **A shorter period is a risk decision.** Setting a period below its default needs the same documented risk treatment as shortening a [safety period](README.md#safety-periods), cited in the host's configuration.
 - **Deletion leaves nothing.** A deleted record is removed from the member's store, not marked; derived copies and backups age out under the Data Store Security Standard's rules for the tenant's data region.
-- **Each run is announced, not each record.** Maintenance writes one `<member>.retention-applied` event per run, with counts by kind, and never the identifiers it deleted.
+- **Each run is announced, not each record.** Maintenance writes one `<member>.retention-applied` event for a run that deleted anything, with counts by kind, and never the identifiers it deleted.
 
 ## Failure handling
 

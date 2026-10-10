@@ -29,7 +29,7 @@ The members' clock ports (`provideIdentityClock`, `provideAuthenticationClock`, 
 
 ## Roles
 
-Authorisation's wildcards never cover `high` or `critical` permissions. `rolesWithIdentityPermissions({ permissions: [...IDENTITY_PERMISSIONS, ...PROFILE_PERMISSIONS], roles: DEFAULT_AUTHORISATION_POLICY.roles })` names Identity's and Profile's in the built-in roles: every high and critical one in `owner`; the high ones that run a group in `administrator` (never ownership, approvals, reparenting, creating root groups, suspending identities or closing break-glass reviews). Pass the result to `provideAuthorisationPolicy({ roles })`.
+Authorisation's wildcards never cover `high` or `critical` permissions. `rolesWithIdentityPermissions({ permissions: [...IDENTITY_PERMISSIONS, ...PROFILE_PERMISSIONS], roles: DEFAULT_AUTHORISATION_POLICY.roles })` names Identity's and Profile's in the built-in roles: every high and critical one in `owner`; the high ones that run a group in `administrator` (never ownership, approvals, reparenting, creating root groups, suspending identities, closing break-glass reviews or a closing tenant's governance export). Pass the result to `provideAuthorisationPolicy({ roles })`.
 
 Profile's `profile.suspended-people:view` (a suspended member's name, to the group's administrators) is `high` because it discloses personal data: so the `*:view` wildcards of `member` and `viewer` never reach it, `owner` and `administrator` hold it by name, and it needs `aal2`. An administrator signed in at `aal1` sees a suspended member as anyone else does.
 

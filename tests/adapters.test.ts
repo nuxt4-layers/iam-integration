@@ -195,10 +195,11 @@ describe('roles for Identity\'s permissions', () => {
         { name: 'identity.groups:archive', risk: 'high' },
         { name: 'identity.group-owners:manage', risk: 'critical' },
         { name: 'identity.identities:suspend', risk: 'high' },
+        { name: 'identity.tenants:export', risk: 'high' },
       ],
       roles: { owner: [{ pattern: '*' }, { pattern: 'identity.groups:archive' }], administrator: [{ pattern: '*' }] },
     })
-    expect(roles.owner.map(r => r.pattern)).toEqual(['*', 'identity.groups:archive', 'identity.group-owners:manage', 'identity.identities:suspend'])
+    expect(roles.owner.map(r => r.pattern)).toEqual(['*', 'identity.groups:archive', 'identity.group-owners:manage', 'identity.identities:suspend', 'identity.tenants:export'])
     expect(roles.administrator.map(r => r.pattern)).toEqual(['*', 'identity.groups:archive'])
   })
 })

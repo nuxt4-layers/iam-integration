@@ -6,7 +6,7 @@ Deleting a group disposes of its information in every member and domain capabili
 
 - **An owner of the group**, with `identity.groups:delete` on it (`critical` risk), after reauthentication with a phishing-resistant authenticator, and with [approval](approvals.md): the group's own requirement, or the single-owner fallback to an owner of the parent or root group, or the published `critical` delay.
 - **Identity itself**, without a further approval, when a [tenant closes](tenant-lifecycle.md) (every group in it) or an [account closes](account-closure.md) (the person's personal group).
-- **A platform operator** places and releases legal holds on groups and tenants (`identity.legal-holds:manage` in the platform group, `critical`, with approval), with a reason code and an end date at most 7 years ahead.
+- **A platform operator** places and releases legal holds on groups and tenants (`identity.legal-holds:manage` in the platform group, `critical`, with approval: `legal-hold.place` and `legal-hold.release`), with a reason code and an end date at most 7 years ahead.
 
 ## Preconditions
 
@@ -40,16 +40,16 @@ Authentication holds nothing scoped to a group, and takes no part.
 - Every step after the first is driven from an outbox and retried until it succeeds. Every disposal function is idempotent: disposing of a group already disposed of, or never known, succeeds and confirms again.
 - Identity expects a confirmation from each member the host lists in its policy (`disposalParticipants`). A disposal not confirmed by every one of them within 7 days of falling due is raised to operators with `group.disposal-overdue`, naming the members still to confirm, and again every 7 days until it is.
 - A confirmation from a member Identity does not expect, or for a group whose disposal is not due, is recorded for audit and changes nothing.
-- A hold placed after disposal is due cannot bring back what was already disposed of. Identity refuses to place a hold on a group whose disposal has been confirmed by every member, and says so to the operator.
+- A hold placed after disposal is due cannot bring back what was already disposed of. Identity refuses to place a hold on a group or tenant whose disposal is already due, and says so to the operator.
 
 ## Events
 
 | Event | Publisher | Data |
 |---|---|---|
-| `group.deleted` | Identity | Group, tenant, kind, `disposal` (`due` or `deferred`) |
+| `group.deleted` | Identity | Group, tenant, kind, `disposal` (`due` or `deferred`), the change behind it (the group's own deletion, or its tenant's shutdown; null for a personal group) |
 | `group.disposal-due` | Identity | Group, tenant |
 | `group.disposal-overdue` | Identity | Group, the members still to confirm |
-| `legal-hold.placed`, `legal-hold.ended` | Identity | Hold, subject (`group` or `tenant` and its identifier), reason code, end date |
+| `legal-hold.placed`, `legal-hold.ended` | Identity | Hold, subject (`group` or `tenant` and its identifier), reason code and end date (placed), how it ended (`expired` or `released`), the change behind it |
 | `authorisation.group-disposed` | Authorisation | Group |
 | `profile.group-disposed` | Profile | Group |
 

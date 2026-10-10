@@ -21,7 +21,7 @@ A tenant is an isolation boundary with a jurisdiction and a data region (Identit
 ### Trigger and actors
 
 - **The owners of the tenant's root group** request it, with `identity.tenants:close` on the root group (`critical`), after reauthentication with a phishing-resistant authenticator; or **a platform operator** starts it, with the same permission in the platform group.
-- Either way it is a `critical` governance change of the platform group: it is approved by the platform's operators (one other than the requester, or two where the platform group requires two), never by the tenant's own owners, and waits out the published `critical` delay.
+- Either way it is a `critical` governance change of the platform group (`tenant.close`; a cancellation is `tenant.cancel-closing`): it is approved by the platform's operators (one other than the requester, or two where the platform group requires two), never by the tenant's own owners, and waits out the published `critical` delay.
 - **A platform operator** may cancel it during the notice period, with the same approval.
 
 ### Preconditions
