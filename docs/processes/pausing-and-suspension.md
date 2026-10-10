@@ -40,7 +40,7 @@ Steps (identity):
 1. **Identity** sets the identity `suspended` and writes `identity.suspended`.
 2. **Authentication** revokes every session and refuses sign-in.
 3. **Authorisation** denies all access derived from memberships.
-4. **Profile** shows the person as suspended only to administrators who need to know.
+4. **Profile** hides the person from everyone but the administrators of each group they belong to: a lookup with the purpose `administration` in that group shows them by display name only, never other details, to a viewer who holds `profile.suspended-people:view` (`high`, so at `aal2`) on the group, which Profile asks Authorisation through its access-decision port.
 
 Reinstatement is the same actors and approval, writing `identity.reinstated` or `membership.reinstated`. The person is told about suspension and reinstatement, with the reason code, unless a legal order forbids it.
 
@@ -52,3 +52,4 @@ Reinstatement is the same actors and approval, writing `identity.reinstated` or 
 - A group restriction on pausing does not stop an account-wide pause.
 - Account pause revokes every session but the current one; suspension revokes all and refuses sign-in.
 - Suspending an identity without approval is refused.
+- A suspended member is named to the group's administrators signed in at `aal2` in an administration listing, and to nobody else.

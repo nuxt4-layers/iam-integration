@@ -129,3 +129,42 @@ export interface AuthorisationDirectoryLike {
   } | null>
   describeGroup(groupId: string, options: { consistency: 'strong' | 'bounded' }): Promise<AuthorisationGroupLike | null>
 }
+
+/** Identity's `exportIdentityData`: its part of an access request, or null when unknown. */
+export type IdentityExportLike = (input: { identityId: string, correlationId: string }) => Promise<unknown | null>
+
+/** Authentication's `exportAuthenticationData` and Authorisation's `exportAuthorisationData`: null when they hold nothing. */
+export type PrincipalExportLike = (input: { principalId: string, correlationId: string }) => Promise<unknown | null>
+
+// ---------------------------------------------------------------------------
+// Profile
+// ---------------------------------------------------------------------------
+
+/** The members whose parts of a data-subject request Profile coordinates, besides its own. */
+export type ProfileRequestMember = 'identity' | 'authentication' | 'authorisation'
+
+/** The parts a legal hold can cover (Profile contract §14). */
+export type ProfileHeldPart = 'profile' | 'authentication' | 'authorisation'
+
+/**
+ * Profile's coordination port (`ProfileRequestCoordinator`): one member's
+ * part of an access request, or null when that member holds nothing for the
+ * identity. A member's failure rejects, and Profile keeps the part pending.
+ */
+export interface ProfileRequestCoordinatorLike {
+  exportPart(input: { identityId: string, part: ProfileRequestMember, correlationId: string }): Promise<unknown | null>
+}
+
+/** Profile's access-decision port (`ProfileAccessDecision`). */
+export interface ProfileAccessDecisionLike {
+  allows(input: { subject: IdentitySubjectLike, permission: string, groupId: string }): Promise<boolean>
+}
+
+/** An event from Profile's outbox, as its relay publishes it. */
+export interface ProfileEventLike {
+  eventId: string
+  type: string
+  occurredAt: string
+  correlationId: string
+  data: Record<string, unknown>
+}
