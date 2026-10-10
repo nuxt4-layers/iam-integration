@@ -101,5 +101,21 @@ A guest is visible, and is paused, suspended and ended through the same lifecycl
 | `active` | Normal operation. At least one owner. |
 | `orphaned` | No active owner remains (for example, every owner's identity was closed). No governance change is possible until [recovery](processes/recovery.md) appoints an owner. Members' access is unaffected. |
 | `archived` | Read-only. No new memberships; existing memberships end or remain read-only according to the group's settings. |
+| `deleted` | Terminal. Confers nothing and appears in no directory answer. Its information is disposed of in every member once no legal hold covers it, leaving Identity's tombstone ([group deletion](processes/group-deletion.md)). |
 
-Personal groups are never orphaned or archived independently of their identity.
+Personal groups are never orphaned or archived independently of their identity. A personal group is deleted only when its identity closes, or when its person is re-homed to a tenant in another data region.
+
+```text
+active ⇄ orphaned
+active → archived → deleted
+```
+
+## 4. Tenant
+
+| State | Meaning |
+|---|---|
+| `active` | Normal operation. |
+| `closing` | The notice period before shutdown: no new groups or memberships; people whose home tenant it is will be re-homed. Can be cancelled. |
+| `closed` | Terminal. Every group in it deleted; Identity keeps a tombstone with its jurisdiction and data region. |
+
+The [tenant lifecycle](processes/tenant-lifecycle.md) moves a tenant between them.

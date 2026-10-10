@@ -4,6 +4,7 @@ import {
   authorisationDirectoryFromIdentity,
   authorisationGovernanceFromIdentity,
   createAuthenticationEventHandler,
+  createDisposalConfirmationHandler,
   createIdentityEventHandler,
   createProfileEventHandler,
   identityAccessDecisionFromAuthorisation,
@@ -11,10 +12,12 @@ import {
   identitySubjectResolverFromAuthentication,
   InvitationAddressError,
   invitationSenderFromIdentity,
+  legalHoldsFromMembers,
   profileAccessDecisionFromAuthorisation,
   profileRequestCoordinatorFromMembers,
   reconcileCredentialRecoveries,
   rolesWithIdentityPermissions,
+  tenantExportFromMembers,
   uuidv7,
 } from '../server/adapters'
 import type { IdentityJoiningLike, IdentityProvisioningLike, InvitationMessage } from '../server/adapters'
@@ -192,10 +195,11 @@ describe('roles for Identity\'s permissions', () => {
         { name: 'identity.groups:archive', risk: 'high' },
         { name: 'identity.group-owners:manage', risk: 'critical' },
         { name: 'identity.identities:suspend', risk: 'high' },
+        { name: 'identity.tenants:export', risk: 'high' },
       ],
       roles: { owner: [{ pattern: '*' }, { pattern: 'identity.groups:archive' }], administrator: [{ pattern: '*' }] },
     })
-    expect(roles.owner.map(r => r.pattern)).toEqual(['*', 'identity.groups:archive', 'identity.group-owners:manage', 'identity.identities:suspend'])
+    expect(roles.owner.map(r => r.pattern)).toEqual(['*', 'identity.groups:archive', 'identity.group-owners:manage', 'identity.identities:suspend', 'identity.tenants:export'])
     expect(roles.administrator.map(r => r.pattern)).toEqual(['*', 'identity.groups:archive'])
   })
 })
@@ -537,5 +541,151 @@ describe('default roles from Authorisation', () => {
     await handle({ type: 'membership.added', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { identityId: 'p', groupId: 'g', kind: 'member', owner: false } } as never)
     await handle({ type: 'membership.added', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { identityId: 'q', groupId: 'g', kind: 'guest', owner: false } } as never)
     expect(assigned).toEqual([{ principalId: 'p', groupId: 'g', roleId: 'contributor', actorPrincipalId: 'iam-integration' }])
+  })
+})
+
+describe('group and tenant disposal', () => {
+  const event = (type: string, data: Record<string, unknown>) => ({ eventId: 'e', type, occurredAt: '2026-10-10T09:00:00.000Z', correlationId: 'c', data })
+  const setup = () => {
+    const log: string[] = []
+    const handle = createIdentityEventHandler({
+      async revokeSessions() {},
+      async discardAccount() {},
+      async deleteAccount() {},
+      async assignRole() {},
+      async unassignRole() {},
+      async applyProfileEvent(received) { log.push(`profile ${received.type}`) },
+      async disposeGroup(input) { log.push(`dispose group ${input.groupId} ${input.correlationId}`) },
+      async disposeTenant(input) { log.push(`dispose tenant ${input.tenantId} ${input.correlationId}`) },
+    })
+    return { log, handle }
+  }
+
+  it('disposes of a deleted group in Authorisation and gives the event to Profile when disposal is due', async () => {
+    const { log, handle } = setup()
+    await handle(event('group.deleted', { groupId: 'g', tenantId: 't', kind: 'standard', disposal: 'due' }))
+    expect(log).toEqual(['profile group.deleted', 'dispose group g c'])
+  })
+
+  it('waits for group.disposal-due while a hold defers disposal', async () => {
+    const { log, handle } = setup()
+    await handle(event('group.deleted', { groupId: 'g', tenantId: 't', kind: 'standard', disposal: 'deferred' }))
+    expect(log).toEqual(['profile group.deleted'])
+    await handle(event('group.disposal-due', { groupId: 'g', tenantId: 't' }))
+    expect(log).toEqual(['profile group.deleted', 'profile group.disposal-due', 'dispose group g c'])
+  })
+
+  it('disposes of a closed tenant\'s own part in Authorisation, only when due', async () => {
+    const { log, handle } = setup()
+    await handle(event('tenant.closed', { tenantId: 't', disposal: 'deferred' }))
+    await handle(event('tenant.closing', { tenantId: 't' }))
+    expect(log).toEqual([])
+    await handle(event('tenant.disposal-due', { tenantId: 't' }))
+    await handle(event('tenant.closed', { tenantId: 'u', disposal: 'due' }))
+    expect(log).toEqual(['dispose tenant t c', 'dispose tenant u c'])
+  })
+
+  it('needs nothing from Profile or Authorisation on re-homing', async () => {
+    const { log, handle } = setup()
+    await handle(event('identity.rehomed', { identityId: 'p', fromTenantId: 't', toTenantId: 'u' }))
+    expect(log).toEqual([])
+  })
+
+  it('rejects when Authorisation fails, so the relay delivers the event again', async () => {
+    const handle = createIdentityEventHandler({
+      async revokeSessions() {},
+      async discardAccount() {},
+      async deleteAccount() {},
+      async assignRole() {},
+      async unassignRole() {},
+      async disposeGroup() { throw new Error('authorisation down') },
+    })
+    await expect(handle(event('group.deleted', { groupId: 'g', disposal: 'due' }))).rejects.toThrow('authorisation down')
+  })
+})
+
+describe('disposal confirmations', () => {
+  const event = (type: string, data: Record<string, unknown>) => ({ eventId: 'e1', type, occurredAt: '2026-10-10T09:00:00.000Z', correlationId: 'c', data })
+
+  it('relays each member\'s confirmation to Identity, naming the member by the event\'s prefix', async () => {
+    const recorded: unknown[] = []
+    const handle = createDisposalConfirmationHandler({ async record(input) { recorded.push(input) } })
+    await handle(event('authorisation.group-disposed', { groupId: 'g' }))
+    await handle(event('profile.group-disposed', { groupId: 'g' }))
+    await handle(event('documents.group-disposed', { groupId: 'g' }))
+    await handle(event('authorisation.tenant-disposed', { tenantId: 't' }))
+    expect(recorded).toEqual([
+      { subject: { kind: 'group', id: 'g' }, member: 'authorisation', eventId: 'e1', correlationId: 'c' },
+      { subject: { kind: 'group', id: 'g' }, member: 'profile', eventId: 'e1', correlationId: 'c' },
+      { subject: { kind: 'group', id: 'g' }, member: 'documents', eventId: 'e1', correlationId: 'c' },
+      { subject: { kind: 'tenant', id: 't' }, member: 'authorisation', eventId: 'e1', correlationId: 'c' },
+    ])
+  })
+
+  it('ignores other events, Identity\'s own, and confirmations without a subject', async () => {
+    const recorded: unknown[] = []
+    const handle = createDisposalConfirmationHandler({ async record(input) { recorded.push(input) } })
+    await handle(event('authorisation.role-expired', { groupId: 'g' }))
+    await handle(event('identity.group-disposed', { groupId: 'g' }))
+    await handle(event('Profile.group-disposed', { groupId: 'g' }))
+    await handle(event('profile.group-disposed', {}))
+    await handle(event('authorisation.tenant-disposed', { groupId: 'g' }))
+    expect(recorded).toEqual([])
+  })
+
+  it('rejects when Identity fails, so the confirmation is delivered again', async () => {
+    const handle = createDisposalConfirmationHandler({ async record() { throw new Error('identity down') } })
+    await expect(handle(event('profile.group-disposed', { groupId: 'g' }))).rejects.toThrow('identity down')
+  })
+})
+
+describe('legal holds for retention and disposal', () => {
+  it('asks Identity about groups and tenants, and Profile about the member\'s own part of a person', async () => {
+    const asked: unknown[] = []
+    const holds = legalHoldsFromMembers({
+      part: 'authentication',
+      async groupOrTenantHeld(subject) { asked.push(subject); return subject.id === 'held' },
+      async personHeldParts(identityId) { return identityId === 'p' ? ['authentication'] : ['profile'] },
+    })
+    expect(await holds.covers({ kind: 'group', id: 'held' })).toBe(true)
+    expect(await holds.covers({ kind: 'tenant', id: 'free' })).toBe(false)
+    expect(await holds.covers({ kind: 'person', id: 'p' })).toBe(true)
+    expect(await holds.covers({ kind: 'person', id: 'q' })).toBe(false)
+    expect(asked).toEqual([{ kind: 'group', id: 'held' }, { kind: 'tenant', id: 'free' }])
+  })
+
+  it('has no holds on people without Profile, and rejects when a member fails', async () => {
+    const holds = legalHoldsFromMembers({ part: 'authorisation', async groupOrTenantHeld() { throw new Error('identity down') } })
+    expect(await holds.covers({ kind: 'person', id: 'p' })).toBe(false)
+    await expect(holds.covers({ kind: 'group', id: 'g' })).rejects.toThrow('identity down')
+  })
+})
+
+describe('tenant governance export', () => {
+  const subject = { principalId: 'o', authenticatedAt: '2026-10-10T09:00:00.000Z', assurance: { level: 'aal2' as const, phishingResistant: true } }
+
+  it('asks Identity first, then Authorisation, and returns both parts unchanged', async () => {
+    const order: string[] = []
+    const { exportTenant } = tenantExportFromMembers({
+      async exportIdentityTenant(input) { order.push(`identity ${input.tenantId} ${input.subject.principalId}`); return { groups: [{ groupId: 'g1' }, { groupId: 'g2' }] } },
+      async exportAuthorisationTenant(input) { order.push(`authorisation ${input.tenantId} ${input.groupIds.join(',')}`); return { roles: [] } },
+    })
+    expect(await exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: { groups: [{ groupId: 'g1' }, { groupId: 'g2' }] }, authorisation: { roles: [] } })
+    expect(order).toEqual(['identity t o', 'authorisation t g1,g2'])
+  })
+
+  it('never asks Authorisation when Identity refuses or does not know the tenant', async () => {
+    const exportAuthorisationTenant = async () => { throw new Error('must not be asked') }
+    const refused = tenantExportFromMembers({ async exportIdentityTenant() { throw new Error('forbidden') }, exportAuthorisationTenant })
+    await expect(refused.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).rejects.toThrow('forbidden')
+    const unknown = tenantExportFromMembers({ async exportIdentityTenant() { return null }, exportAuthorisationTenant })
+    expect(await unknown.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toBeNull()
+  })
+
+  it('rejects the whole export when Authorisation fails, and has no Authorisation part without it', async () => {
+    const failing = tenantExportFromMembers({ async exportIdentityTenant() { return { groups: [] } }, async exportAuthorisationTenant() { throw new Error('down') } })
+    await expect(failing.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).rejects.toThrow('down')
+    const alone = tenantExportFromMembers({ async exportIdentityTenant() { return { groups: [] } } })
+    expect(await alone.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: { groups: [] }, authorisation: null })
   })
 })

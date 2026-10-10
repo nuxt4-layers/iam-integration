@@ -233,3 +233,49 @@ export interface ProfileEventLike {
   correlationId: string
   data: Record<string, unknown>
 }
+
+// ---------------------------------------------------------------------------
+// End of life: disposal, holds and the tenant export
+// ---------------------------------------------------------------------------
+
+/** What a group or tenant disposal is about. */
+export interface DisposalSubjectLike {
+  kind: 'group' | 'tenant'
+  id: string
+}
+
+/** An event from any member's outbox, as its relay publishes it. */
+export interface MemberEventLike {
+  eventId: string
+  type: string
+  occurredAt: string
+  correlationId: string
+  data: Record<string, unknown>
+}
+
+/**
+ * Identity's `recordIdentityDisposal`: one member's part of a group's or
+ * tenant's disposal is done. Identity checks the member is one it expects
+ * and keeps the confirmation; it is idempotent by event identifier.
+ */
+export type IdentityDisposalRecorderLike = (input: { subject: DisposalSubjectLike, member: string, eventId: string, correlationId: string }) => Promise<unknown>
+
+/**
+ * Identity's `identityLegalHoldCovers`: whether a legal hold covers a group
+ * (directly or through its tenant) or a tenant now.
+ */
+export type IdentityLegalHoldCoversLike = (subject: DisposalSubjectLike) => Promise<boolean>
+
+/** Profile's `profileLegalHoldParts`: the parts of a person's data under legal hold now. */
+export type ProfileLegalHoldPartsLike = (identityId: string) => Promise<readonly ProfileHeldPart[]>
+
+/**
+ * Identity's `exportIdentityTenantData`: the tenant's governance records, for
+ * an owner of its root group during the notice period. Identity decides who
+ * may have it, and rejects with its coarse error otherwise; null when the
+ * tenant is unknown.
+ */
+export type IdentityTenantExportLike = (input: { subject: IdentitySubjectLike, tenantId: string, correlationId: string }) => Promise<{ groups: readonly { groupId: string }[] } | null>
+
+/** Authorisation's `exportAuthorisationTenantData`: server-only, its part of the tenant's governance export, for the groups Identity's part names. */
+export type AuthorisationTenantExportLike = (input: { tenantId: string, groupIds: readonly string[], correlationId: string }) => Promise<unknown | null>

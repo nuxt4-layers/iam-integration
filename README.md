@@ -28,12 +28,12 @@ Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform
 ## Documentation
 
 - [Suite architecture](docs/architecture.md): members, ports, events and how a host composes them
-- [State models](docs/states.md): identity, membership and group states
-- [Processes](docs/processes/README.md): provisioning, groups, joining and leaving, pausing and suspension, approvals, account closure, data-subject requests and recovery
+- [State models](docs/states.md): identity, membership, group and tenant states
+- [Processes](docs/processes/README.md): provisioning, groups and their deletion, tenants, joining and leaving, pausing and suspension, approvals, access administration, account closure, data-subject requests, retention, recovery and break-glass access
 - [Reference adapters](docs/adapters.md): the package of adapters between the members' ports, event handling and credential recovery
 - [Roadmap](docs/roadmap.md)
 - [Suite improvement register](docs/improvement-register.md): the 24 suite improvements and the decisions taken on each
 
 ## Status
 
-Documentation, and the reference adapters between Identity, Authentication and Authorisation (`server/adapters/`, [adapters](docs/adapters.md)). Profile's follow once Profile exists.
+Documentation, and the reference adapters between all four members (`server/adapters/`, [adapters](docs/adapters.md)), composed and tested end to end in `platform-test-harness`. Phase 6 (end of life: group deletion, the tenant lifecycle and retention) is in progress; see the [roadmap](docs/roadmap.md).

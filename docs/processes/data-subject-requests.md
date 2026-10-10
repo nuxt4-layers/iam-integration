@@ -30,7 +30,7 @@ Each request names the members' parts it needs. A part is `pending`, `done`, `ex
 
 ## Legal holds
 
-A legal hold is recorded by Profile: the identity, the parts it covers (any of `profile`, `authentication`, `authorisation`), a reason code and an end date, at most 7 years ahead; a longer hold is a new hold. It blocks only the erasure of the parts it covers, never access, correction or restriction, and never Identity's closure: the identity still closes, and the person is hidden from everyone.
+Legal holds on groups and tenants are Identity's ([group deletion](group-deletion.md#legal-holds-on-groups-and-tenants)); those on a person are Profile's. A legal hold on a person is recorded by Profile: the identity, the parts it covers (any of `profile`, `authentication`, `authorisation`), a reason code and an end date, at most 7 years ahead; a longer hold is a new hold. It blocks only the erasure of the parts it covers, never access, correction or restriction, and never Identity's closure: the identity still closes, and the person is hidden from everyone.
 
 - While a hold covers **Profile**, Profile keeps the closed person's encrypted record, readable by nobody through any function, and erases it when the hold ends.
 - While a hold covers **Authentication** or **Authorisation**, the event handler does not erase that member's part on `identity.closed`. Authentication still refuses sign-in, since the identity is closed, so the sign-in identifier cannot be used to sign up afresh until the hold ends.
