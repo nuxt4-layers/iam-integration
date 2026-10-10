@@ -667,11 +667,11 @@ describe('tenant governance export', () => {
   it('asks Identity first, then Authorisation, and returns both parts unchanged', async () => {
     const order: string[] = []
     const { exportTenant } = tenantExportFromMembers({
-      async exportIdentityTenant(input) { order.push(`identity ${input.tenantId} ${input.subject.principalId}`); return { groups: [] } },
-      async exportAuthorisationTenant(input) { order.push(`authorisation ${input.tenantId}`); return { roles: [] } },
+      async exportIdentityTenant(input) { order.push(`identity ${input.tenantId} ${input.subject.principalId}`); return { groups: [{ groupId: 'g1' }, { groupId: 'g2' }] } },
+      async exportAuthorisationTenant(input) { order.push(`authorisation ${input.tenantId} ${input.groupIds.join(',')}`); return { roles: [] } },
     })
-    expect(await exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: { groups: [] }, authorisation: { roles: [] } })
-    expect(order).toEqual(['identity t o', 'authorisation t'])
+    expect(await exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: { groups: [{ groupId: 'g1' }, { groupId: 'g2' }] }, authorisation: { roles: [] } })
+    expect(order).toEqual(['identity t o', 'authorisation t g1,g2'])
   })
 
   it('never asks Authorisation when Identity refuses or does not know the tenant', async () => {
@@ -683,9 +683,9 @@ describe('tenant governance export', () => {
   })
 
   it('rejects the whole export when Authorisation fails, and has no Authorisation part without it', async () => {
-    const failing = tenantExportFromMembers({ async exportIdentityTenant() { return {} }, async exportAuthorisationTenant() { throw new Error('down') } })
+    const failing = tenantExportFromMembers({ async exportIdentityTenant() { return { groups: [] } }, async exportAuthorisationTenant() { throw new Error('down') } })
     await expect(failing.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).rejects.toThrow('down')
-    const alone = tenantExportFromMembers({ async exportIdentityTenant() { return {} } })
-    expect(await alone.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: {}, authorisation: null })
+    const alone = tenantExportFromMembers({ async exportIdentityTenant() { return { groups: [] } } })
+    expect(await alone.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: { groups: [] }, authorisation: null })
   })
 })

@@ -69,7 +69,7 @@ export function legalHoldsFromMembers(input: {
 
 /** A tenant's governance export: each member's part, unchanged. */
 export interface TenantExport {
-  identity: unknown
+  identity: { groups: readonly { groupId: string }[] }
   authorisation: unknown | null
 }
 
@@ -89,7 +89,7 @@ export function tenantExportFromMembers(input: {
       const identity = await input.exportIdentityTenant(request)
       if (identity === null || identity === undefined) return null
       const authorisation = input.exportAuthorisationTenant
-        ? (await input.exportAuthorisationTenant({ tenantId: request.tenantId, correlationId: request.correlationId })) ?? null
+        ? (await input.exportAuthorisationTenant({ tenantId: request.tenantId, groupIds: identity.groups.map(group => group.groupId), correlationId: request.correlationId })) ?? null
         : null
       return { identity, authorisation }
     },

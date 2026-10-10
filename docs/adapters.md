@@ -72,7 +72,7 @@ Identity says in `group.deleted` and `tenant.closed` whether disposal is `due` o
 
 ## Tenant export
 
-`tenantExportFromMembers({ exportIdentityTenant, exportAuthorisationTenant })` is the back end of the host's governance export endpoint during a tenant's notice period ([tenant lifecycle](processes/tenant-lifecycle.md#governance-export)). `exportTenant({ subject, tenantId, correlationId })` asks Identity first, which decides whether the subject may have it (an owner of the tenant's root group, at `aal2`, while the tenant is `closing`) and rejects otherwise; only then is Authorisation's server-only part asked for. It returns both parts unchanged, or null for a tenant Identity does not know; any failure rejects the whole export. It holds identifiers, never personal data, and the adapter keeps nothing.
+`tenantExportFromMembers({ exportIdentityTenant, exportAuthorisationTenant })` is the back end of the host's governance export endpoint during a tenant's notice period ([tenant lifecycle](processes/tenant-lifecycle.md#governance-export)). `exportTenant({ subject, tenantId, correlationId })` asks Identity first, which decides whether the subject may have it (an owner of the tenant's root group, at `aal2`, while the tenant is `closing`) and rejects otherwise; only then is Authorisation's server-only part asked for, for the groups Identity's part names. It returns both parts unchanged, or null for a tenant Identity does not know; any failure rejects the whole export. It holds identifiers, never personal data, and the adapter keeps nothing.
 
 ## Credential recovery
 

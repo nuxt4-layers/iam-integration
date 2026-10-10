@@ -275,7 +275,7 @@ export type ProfileLegalHoldPartsLike = (identityId: string) => Promise<readonly
  * may have it, and rejects with its coarse error otherwise; null when the
  * tenant is unknown.
  */
-export type IdentityTenantExportLike = (input: { subject: IdentitySubjectLike, tenantId: string, correlationId: string }) => Promise<unknown | null>
+export type IdentityTenantExportLike = (input: { subject: IdentitySubjectLike, tenantId: string, correlationId: string }) => Promise<{ groups: readonly { groupId: string }[] } | null>
 
-/** Authorisation's `exportAuthorisationTenantData`: server-only, its part of the tenant's governance export. */
-export type AuthorisationTenantExportLike = (input: { tenantId: string, correlationId: string }) => Promise<unknown | null>
+/** Authorisation's `exportAuthorisationTenantData`: server-only, its part of the tenant's governance export, for the groups Identity's part names. */
+export type AuthorisationTenantExportLike = (input: { tenantId: string, groupIds: readonly string[], correlationId: string }) => Promise<unknown | null>
