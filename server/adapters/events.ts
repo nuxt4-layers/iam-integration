@@ -29,8 +29,14 @@ export interface IdentityEventHandlerDependencies {
    * by event id.
    */
   applyProfileEvent?(event: IdentityEventLike): Promise<unknown>
-  /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. */
+  /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. Ignored when `defaultRoles` is given. */
   membershipRoles?: { member: string | null, guest: string | null }
+  /**
+   * Authorisation's `authorisationDefaultRoles`: the group's own default role
+   * for a new member and a new guest (docs/processes/access-administration.md).
+   * Without it, `membershipRoles` applies to every group.
+   */
+  defaultRoles?(groupId: string): Promise<{ member: string | null, guest: string | null }>
   /**
    * Authorisation's `eraseAuthorisationPrincipal`: removes a closed
    * identity's assignments and grants (account closure step 6).
@@ -47,6 +53,23 @@ export interface IdentityEventHandlerDependencies {
    * done, for any erasure request it holds for the identity.
    */
   recordRequestPart?(input: { identityId: string, part: 'authentication' | 'authorisation', correlationId: string }): Promise<unknown>
+  /**
+   * Break-glass rotation (ADR-0007; docs/processes/break-glass.md): after
+   * every use, Authentication's `rotateAuthenticationBreakGlass` removes the
+   * account's passkey and sessions and issues a new one-time enrolment link,
+   * which the host delivers to the platform's operators. Without it,
+   * `break-glass.used` rotates nothing, and the host must rotate by hand.
+   */
+  breakGlass?: BreakGlassRotation
+}
+
+export interface BreakGlassRotation {
+  /** Authentication's `rotateAuthenticationBreakGlass`. */
+  rotate(input: { identityId: string, correlationId: string }): Promise<{ enrolmentToken: string, expiresAt: string }>
+  /** The absolute URL of Authentication's break-glass enrolment page; the token goes in its fragment. */
+  enrolmentUrl: string
+  /** The host's delivery of the new enrolment link to the platform's operators. Never logged. */
+  deliver(input: { identityId: string, link: string, expiresAt: string, correlationId: string }): Promise<void>
 }
 
 /** The erasures Authentication and Authorisation owe a closed identity, skipping held parts. */
@@ -119,7 +142,8 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
       }
       case 'membership.added': {
         if (!identityId || !groupId) return
-        const role = data.kind === 'guest' ? roles.guest : roles.member
+        const defaults = deps.defaultRoles ? await deps.defaultRoles(groupId) : roles
+        const role = data.kind === 'guest' ? defaults.guest : defaults.member
         if (role) await deps.assignRole({ principalId: identityId, groupId, roleId: role, actorPrincipalId })
         if (data.owner === true) await deps.assignRole({ principalId: identityId, groupId, roleId: 'owner', actorPrincipalId })
         return
@@ -127,6 +151,15 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
       case 'membership.ended':
         if (identityId && groupId) await deps.unassignRole({ principalId: identityId, groupId, roleId: null, actorPrincipalId })
         return
+      case 'break-glass.used': {
+        const breakGlassId = text(data.breakGlassIdentityId)
+        if (!breakGlassId || !deps.breakGlass) return
+        // Delivered at least once: a repeat rotates again, so only the latest link works.
+        const { enrolmentToken, expiresAt } = await deps.breakGlass.rotate({ identityId: breakGlassId, correlationId: event.correlationId })
+        const link = `${new URL(deps.breakGlass.enrolmentUrl).href}#${enrolmentToken}`
+        await deps.breakGlass.deliver({ identityId: breakGlassId, link, expiresAt, correlationId: event.correlationId })
+        return
+      }
       default:
         // Other events need nothing from Authentication or Authorisation.
     }

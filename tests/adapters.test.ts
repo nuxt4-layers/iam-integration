@@ -2,19 +2,22 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticationIdentityFromIdentity,
   authorisationDirectoryFromIdentity,
+  authorisationGovernanceFromIdentity,
   createAuthenticationEventHandler,
   createIdentityEventHandler,
   createProfileEventHandler,
   identityAccessDecisionFromAuthorisation,
   identityApprovalPolicyFromAuthorisation,
   identitySubjectResolverFromAuthentication,
+  InvitationAddressError,
+  invitationSenderFromIdentity,
   profileAccessDecisionFromAuthorisation,
   profileRequestCoordinatorFromMembers,
   reconcileCredentialRecoveries,
   rolesWithIdentityPermissions,
   uuidv7,
 } from '../server/adapters'
-import type { IdentityProvisioningLike } from '../server/adapters'
+import type { IdentityJoiningLike, IdentityProvisioningLike, InvitationMessage } from '../server/adapters'
 
 const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -386,5 +389,153 @@ describe('credential recovery', () => {
     })
     expect(recorded).toEqual(['a', 'b', 'c'])
     expect(result).toEqual({ recorded: 3, after: 'c1' })
+  })
+})
+
+describe('invitation delivery', () => {
+  const subject = { principalId: 'inviter', authenticatedAt: '2026-10-10T10:00:00.000Z', assurance: { level: 'aal1' as const, phishingResistant: false } }
+  const token = 'A'.repeat(43)
+  function joining(log: unknown[]): IdentityJoiningLike {
+    return {
+      async invite(input) {
+        log.push(['invite', input])
+        return { invitationId: 'i', token, expiresAt: '2026-10-24T10:00:00.000Z', requiresConfirmation: input.kind === 'guest' }
+      },
+      async revoke(input) { log.push(['revoke', input]) },
+    }
+  }
+
+  it('asks Identity for an unbound invitation and delivers the link with the token in the fragment', async () => {
+    const log: unknown[] = []
+    const delivered: InvitationMessage[] = []
+    const sender = invitationSenderFromIdentity({ joining: joining(log), deliver: async (m) => { delivered.push(m) }, acceptanceUrl: 'https://example.org/invitations/accept' })
+    const answer = await sender.send({ subject, groupId: 'g', kind: 'guest', address: 'someone@example.org', correlationId: 'c' })
+    expect(answer).toEqual({ invitationId: 'i', expiresAt: '2026-10-24T10:00:00.000Z', requiresConfirmation: true })
+    expect(log).toEqual([['invite', { subject, groupId: 'g', kind: 'guest', inviteeIdentityId: null, membershipStartsAt: undefined, membershipEndsAt: undefined, correlationId: 'c' }]])
+    expect(JSON.stringify(log)).not.toContain('someone@example.org')
+    expect(delivered).toEqual([{ address: 'someone@example.org', link: `https://example.org/invitations/accept#${token}`, groupId: 'g', kind: 'guest', expiresAt: '2026-10-24T10:00:00.000Z', correlationId: 'c' }])
+    expect(JSON.stringify(answer)).not.toContain(token)
+  })
+
+  it('answers the same whatever the address', async () => {
+    const sender = invitationSenderFromIdentity({ joining: joining([]), deliver: async () => {}, acceptanceUrl: 'https://example.org/invitations/accept' })
+    const known = await sender.send({ subject, groupId: 'g', kind: 'member', address: 'known@example.org', correlationId: 'c' })
+    const unknown = await sender.send({ subject, groupId: 'g', kind: 'member', address: 'nobody@example.org', correlationId: 'c' })
+    expect(known).toEqual(unknown)
+  })
+
+  it('refuses an unusable address before asking Identity', async () => {
+    const log: unknown[] = []
+    const sender = invitationSenderFromIdentity({ joining: joining(log), deliver: async () => {}, acceptanceUrl: 'https://example.org/invitations/accept' })
+    for (const address of ['', 'a b@example.org', 'x\u0000@example.org', 'a'.repeat(321)]) {
+      await expect(sender.send({ subject, groupId: 'g', kind: 'member', address, correlationId: 'c' })).rejects.toBeInstanceOf(InvitationAddressError)
+    }
+    expect(log).toEqual([])
+  })
+
+  it('revokes the invitation and rejects when delivery refuses it', async () => {
+    const log: unknown[] = []
+    const sender = invitationSenderFromIdentity({ joining: joining(log), deliver: async () => { throw new Error('undeliverable') }, acceptanceUrl: 'https://example.org/invitations/accept' })
+    await expect(sender.send({ subject, groupId: 'g', kind: 'member', address: 'a@example.org', correlationId: 'c' })).rejects.toThrow('undeliverable')
+    expect(log[1]).toEqual(['revoke', { subject, invitationId: 'i', correlationId: 'c' }])
+  })
+
+  it('rejects when Identity refuses, delivering nothing', async () => {
+    const delivered: unknown[] = []
+    const sender = invitationSenderFromIdentity({
+      joining: { async invite() { throw new Error('forbidden') }, async revoke() {} },
+      deliver: async (m) => { delivered.push(m) },
+      acceptanceUrl: 'https://example.org/invitations/accept',
+    })
+    await expect(sender.send({ subject, groupId: 'g', kind: 'member', address: 'a@example.org', correlationId: 'c' })).rejects.toThrow('forbidden')
+    expect(delivered).toEqual([])
+  })
+
+  it('accepts only an https acceptance page without query or fragment (localhost aside)', () => {
+    const base = { joining: joining([]), deliver: async () => {} }
+    expect(() => invitationSenderFromIdentity({ ...base, acceptanceUrl: 'http://example.org/invitations/accept' })).toThrow(TypeError)
+    expect(() => invitationSenderFromIdentity({ ...base, acceptanceUrl: 'https://example.org/accept?x=1' })).toThrow(TypeError)
+    expect(() => invitationSenderFromIdentity({ ...base, acceptanceUrl: 'http://localhost:3000/invitations/accept' })).not.toThrow()
+  })
+})
+
+describe('break-glass rotation', () => {
+  const used = (breakGlassIdentityId: string) => ({ type: 'break-glass.used', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { reviewId: 'r', breakGlassIdentityId, action: 'suspend-identity', targetId: 't', reasonCode: 'incident' } })
+  const base = { async revokeSessions() {}, async discardAccount() {}, async deleteAccount() {}, async assignRole() {}, async unassignRole() {} }
+
+  it('rotates the passkey after every use and delivers the new enrolment link to operators', async () => {
+    const log: unknown[] = []
+    const handle = createIdentityEventHandler({
+      ...base,
+      breakGlass: {
+        async rotate(input) { log.push(['rotate', input]); return { enrolmentToken: 'T'.repeat(43), expiresAt: '2026-10-10T11:00:00.000Z' } },
+        enrolmentUrl: 'https://example.org/break-glass/enrol',
+        async deliver(input) { log.push(['deliver', input]) },
+      },
+    })
+    await handle(used('bg') as never)
+    expect(log).toEqual([
+      ['rotate', { identityId: 'bg', correlationId: 'c' }],
+      ['deliver', { identityId: 'bg', link: `https://example.org/break-glass/enrol#${'T'.repeat(43)}`, expiresAt: '2026-10-10T11:00:00.000Z', correlationId: 'c' }],
+    ])
+  })
+
+  it('rejects when rotation fails, so the relay delivers the event again', async () => {
+    const handle = createIdentityEventHandler({ ...base, breakGlass: { async rotate() { throw new Error('down') }, enrolmentUrl: 'https://example.org/e', async deliver() {} } })
+    await expect(handle(used('bg') as never)).rejects.toThrow('down')
+  })
+
+  it('does nothing without a rotation composed', async () => {
+    await expect(createIdentityEventHandler(base)(used('bg') as never)).resolves.toBeUndefined()
+  })
+})
+
+describe('Authorisation governance from Identity', () => {
+  const group = {
+    groupId: 'g', tenantId: 't', kind: 'personal' as const, state: 'active' as const, parentGroupId: null, rootGroupId: 'g', personalOfIdentityId: 'p',
+    approvals: { required: { low: 0 as const, medium: 0 as const, high: 1 as const, critical: 2 as const }, referenceRequired: false },
+    safetyPeriods: { publishedDelayHighHours: 72, publishedDelayCriticalHours: 168, approvalExpiryDays: 7, recoveryHoldHours: 72 },
+    requester: { recoveryHoldUntil: null, controls: ['s'] },
+  }
+
+  it('passes Identity\'s facts through, with principals for identities', async () => {
+    const asked: unknown[] = []
+    const governance = authorisationGovernanceFromIdentity({
+      governance: {
+        async describeGroup(input) { asked.push(input); return input.groupId === 'g' ? group : null },
+        async isOwner(input) { asked.push(input); return input.identityId === 'o' },
+        async countOwners(input) { asked.push(input); return 2 },
+      },
+    })
+    const { personalOfIdentityId: _, ...rest } = group
+    expect(await governance.describeGroup({ groupId: 'g', principalId: 'p', correlationId: 'c' })).toEqual({ ...rest, personalOfPrincipalId: 'p' })
+    expect(await governance.describeGroup({ groupId: 'x', principalId: 'p', correlationId: 'c' })).toBeNull()
+    expect(await governance.isOwner({ principalId: 'o', groupId: 'g' })).toBe(true)
+    expect(await governance.countOwners({ groupId: 'g', excluding: ['p'] })).toBe(2)
+    expect(asked).toEqual([
+      { groupId: 'g', identityId: 'p', correlationId: 'c' },
+      { groupId: 'x', identityId: 'p', correlationId: 'c' },
+      { identityId: 'o', groupId: 'g' },
+      { groupId: 'g', excluding: ['p'] },
+    ])
+  })
+
+  it('rejects when Identity fails, so Authorisation refuses the change', async () => {
+    const governance = authorisationGovernanceFromIdentity({ governance: { async describeGroup() { throw new Error('down') }, async isOwner() { return false }, async countOwners() { return 0 } } })
+    await expect(governance.describeGroup({ groupId: 'g', principalId: 'p', correlationId: 'c' })).rejects.toThrow('down')
+  })
+})
+
+describe('default roles from Authorisation', () => {
+  it('assigns the group\'s own default role for the membership kind', async () => {
+    const assigned: unknown[] = []
+    const handle = createIdentityEventHandler({
+      async revokeSessions() {}, async discardAccount() {}, async deleteAccount() {}, async unassignRole() {},
+      async assignRole(input) { assigned.push(input) },
+      async defaultRoles(groupId) { return groupId === 'g' ? { member: 'contributor', guest: null } : { member: 'member', guest: 'viewer' } },
+    })
+    await handle({ type: 'membership.added', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { identityId: 'p', groupId: 'g', kind: 'member', owner: false } } as never)
+    await handle({ type: 'membership.added', occurredAt: '2026-10-10T10:00:00.000Z', correlationId: 'c', data: { identityId: 'q', groupId: 'g', kind: 'guest', owner: false } } as never)
+    expect(assigned).toEqual([{ principalId: 'p', groupId: 'g', roleId: 'contributor', actorPrincipalId: 'iam-integration' }])
   })
 })

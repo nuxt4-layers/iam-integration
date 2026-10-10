@@ -34,6 +34,7 @@ Each row is a port declared by the consuming member and supplied by the host.
 | Authentication | Identity provisioning | Identity | Reserve a `pending` identity at sign-up and confirm it once the sign-in identifier is verified (which creates the personal group), and read whether an identity may sign in (`active` or `paused`; `pending` only to verify; passkey only for break-glass accounts) |
 | Authorisation | `AuthorisationDirectory` | Identity | Actor context (personal group, memberships with status) and group description (lineage, tenant), with `strong` or `bounded` consistency. Identity's directory speaks its own vocabulary (effective status including `paused`, membership kind and dates); the adapter passes `paused` through and gives the principal's status from the identity's state (Authorisation contract 3) |
 | Identity | Access decision | Authorisation | Whether a subject may exercise one of Identity's permissions on a group, for every change Identity does not reserve to the person themselves |
+| Authorisation | Governance | Identity | For a group: its approval requirement and safety periods in force, its parent and root groups, whether it is the requester's personal group, the requester's recovery hold and the identities the requester controls; and whether a principal owns a group, and how many do, from Identity's own record ([access administration](processes/access-administration.md)) |
 | Identity | Approval policy | Authorisation | A permission's risk level, whether an approver qualifies at decision time, and how many others qualify (to choose the approval route) |
 | Profile | Disclosure context | Identity | For one viewer and a batch of subjects: each relationship (self, same group, former member, same tenant, none) and standing, and the group's departure data policy |
 | Profile | Access decision | Authorisation | Whether a viewer holds one of Profile's permissions on a group: today `profile.suspended-people:view`, under which a group's administrators see its suspended members by name |
@@ -89,7 +90,18 @@ A host that uses the suite:
 
 1. Supplies each member's persistence port (ADR-0002) with its own schema and its own database role.
 2. Supplies the ports in §3 with adapters, normally the reference adapters from this repository.
-3. Runs an outbox relay for each publishing member.
-4. Applies each member's migrations in dependency order: Identity, then Authentication, Profile and Authorisation in any order.
+3. Supplies one clock to every member (§7), or none, so that each uses the system clock.
+4. Runs an outbox relay for each publishing member.
+5. Applies each member's migrations in dependency order: Identity, then Authentication, Profile and Authorisation in any order.
+
+## 7. Time
+
+Each member reads the current time from a clock port the host may supply: `provideIdentityClock`, `provideAuthenticationClock`, `provideAuthorisationClock` and `provideProfileClock`, each taking `{ now(): Date }`. Without one, a member uses the system clock. The proposed foundation service `clock-service`, not yet specified or built, will be supplied through the same port by an adapter in this repository; no member depends on it, and until it exists the system clock is the only production clock.
+
+- **One clock for the suite.** A host supplies the same clock to every member, or none. Times cross members (Authentication's authentication time is judged against Identity's safety periods; Profile's legal holds against Identity's closure), so two clocks would make freshness and periods disagree.
+- **Every time a member keeps or judges** comes from its clock: when something happened, when a safety period, delay, hold, expiry or grace period ends, and whether an authentication is recent. A member whose database judges time (Identity's row-level checks and maintenance) gives the database the clock's time for every transaction.
+- **Not the engines' own time.** Time the members delegate to a library stays on the system clock: Authentication's session lifetime, rate limits and one-time-password steps, which an authenticator app computes from real time.
+- **Fails closed.** A clock that throws, or answers anything but a valid date, fails the operation as the member's `unavailable`; a member never falls back to another time.
+- **A clock is trusted like a key.** Whoever supplies it can make a safety period, a closure grace period or a legal hold end early. Only the host composes it, from server code; no request can set or move it. A clock that can be moved is for tests only: the host must refuse to compose one outside a test mode, and it may only move forward. Each member records this in its threat model.
 
 A host may run without Profile. Display-name lookups then return no names, and data-subject requests cover only what the other members hold.

@@ -11,10 +11,19 @@
 | `authorisationDirectoryFromIdentity({ directory })` | Authorisation's `AuthorisationDirectory` | Identity's `getIdentityDirectory()` | `identityId` becomes `principalId`; each membership's effective status passes through, `paused` included; the identity's state becomes the principal's `status` (`active`, `paused`, otherwise `suspended`); consistency passed through (Authorisation contract 3) |
 | `identityAccessDecisionFromAuthorisation({ authorise })` | Identity's `IdentityAccessDecision` | Authorisation's `authorise` | The resource is the group itself, of the permission's type, owned by the group; reasons collapse to `not-permitted` or `insufficient-assurance` with its requirement |
 | `identityApprovalPolicyFromAuthorisation({ riskOf, qualifies, countQualifying })` | Identity's `IdentityApprovalPolicy` | Authorisation's `authorisationQualifies` and `countAuthorisationQualifying`, and the catalogue the host supplied | The same group resource; the requester excluded from the count |
+| `authorisationGovernanceFromIdentity({ governance })` | Authorisation's `AuthorisationGovernance` (`provideAuthorisationGovernance`) | Identity's `getIdentityAccessGovernance()` | A group's approval requirement and safety periods in force, its parent and root, whose personal group it is, the requester's recovery hold and controlled identities, and Identity's record of owners ([access administration](processes/access-administration.md)); the identity identifier becomes the principal identifier |
 | `profileAccessDecisionFromAuthorisation({ authorise })` | Profile's `ProfileAccessDecision` | Authorisation's `authorise` | The same group resource, for Profile's permissions (`profile.suspended-people:view`); every refusal, insufficient assurance included, is `false`, so Profile shows what it shows anyone |
 | `profileRequestCoordinatorFromMembers({ exportIdentity, exportAuthentication, exportAuthorisation })` | Profile's `ProfileRequestCoordinator` | Identity's `exportIdentityData`, Authentication's `exportAuthenticationData`, Authorisation's `exportAuthorisationData` | One member's part of an access request ([data-subject requests](processes/data-subject-requests.md)): the identity identifier becomes the principal identifier for Authentication and Authorisation; a member the host does not compose holds nothing (null); a failing member rejects its own part only |
 
 Every adapter rejects when the member it calls fails, so the consuming member fails closed.
+
+## Invitations
+
+`invitationSenderFromIdentity({ joining, deliver, acceptanceUrl })` is the host's invitation endpoint's back end ([joining and leaving](processes/joining-and-leaving.md)). `send({ subject, groupId, kind, address, ... })` asks Identity's `getIdentityJoining().invite` for an invitation bound to nobody, and hands `deliver` (the host's notification capability) the address and a link to Identity's acceptance page with the token in the fragment. It looks the address up nowhere and keeps neither, so the answer is the same whatever the address. An address that is not printable or longer than 320 characters is refused before Identity is asked (`InvitationAddressError`); whether it can receive mail is delivery's to judge. If delivery refuses the message, the invitation is revoked and the call rejects, so no token is left that nobody holds.
+
+## Time
+
+The members' clock ports (`provideIdentityClock`, `provideAuthenticationClock`, `provideAuthorisationClock`, `provideProfileClock`) take `{ now(): Date }` directly, so they need no adapter: a host passes the same clock to each, or none ([architecture](architecture.md) §7). When the proposed `clock-service` exists, its adapter will live here.
 
 ## Roles
 
@@ -33,8 +42,9 @@ Profile's `profile.suspended-people:view` (a suspended member's name, to the gro
 | `identity.closed` | Authentication's `deleteAuthenticationAccount`, then Authorisation's `eraseAuthorisationPrincipal` (`erasePrincipal`), each unless a legal hold covers it |
 | `group.created` | The founding owner gets `owner` in the group |
 | `group.owners-changed` | Owners added get `owner`; owners removed lose it |
-| `membership.added` | The membership kind's role (`member`, or `viewer` for guests; configurable), and `owner` for an owner |
+| `membership.added` | The group's default role for the membership kind, from Authorisation's `authorisationDefaultRoles` (`defaultRoles`), or else `member`, or `viewer` for guests (configurable); and `owner` for an owner |
 | `membership.ended` | Every role in the group is removed |
+| `break-glass.used` | With `breakGlass`, Authentication's `rotateAuthenticationBreakGlass` removes the account's passkey and sessions, and the new enrolment link goes to the host's `deliver` for the platform's operators ([break-glass access](processes/break-glass.md)) |
 
 With `applyProfileEvent` (Profile's `applyProfileIdentityEvent`), the handler first passes `identity.provisioned`, `membership.ended`, `identity.closed`, `identity.paused` and `group.renamed` to Profile unchanged: Profile creates a person's empty record, keeps how a leaver is shown in the group, erases the record on closure (unless held), and marks the parts of data-subject requests these events complete. Profile is idempotent by event id, and a failure rejects the event so that Identity's relay delivers it again. Profile reads pausing and suspension from Identity's disclosure-context port, not from events.
 

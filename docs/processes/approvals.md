@@ -28,7 +28,7 @@ A group may raise its requirement; it may never lower it below the default. Rais
 
 ## Steps
 
-1. The requesting member (**Identity** for governance, **Authorisation** for roles and grants) records a pending change with its requester, beneficiary, risk, justification (a reason code and, where the group requires it, a reference), required approvals, expiry (the configured approval expiry, by default 7 days) and correlation identifier, and writes `approval.requested`.
+1. The requesting member (**Identity** for governance, **Authorisation** for roles and grants, as [access administration](access-administration.md) sets out) records a pending change with its requester, beneficiary, risk, justification (a reason code and, where the group requires it, a reference), required approvals, expiry (the configured approval expiry, by default 7 days) and correlation identifier, and writes `approval.requested`.
 2. Notification capabilities tell qualifying approvers.
 3. An approver approves or rejects through the owning member, at the assurance the risk requires (**Authentication** step-up). The owning member re-checks that the approver still qualifies at decision time.
 4. When the requirement is met, the owning member applies the change in the same transaction as recording the decision, and writes `approval.decided` and the change's own event.
