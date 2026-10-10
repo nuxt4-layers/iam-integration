@@ -4,9 +4,12 @@ import {
   authorisationDirectoryFromIdentity,
   createAuthenticationEventHandler,
   createIdentityEventHandler,
+  createProfileEventHandler,
   identityAccessDecisionFromAuthorisation,
   identityApprovalPolicyFromAuthorisation,
   identitySubjectResolverFromAuthentication,
+  profileAccessDecisionFromAuthorisation,
+  profileRequestCoordinatorFromMembers,
   reconcileCredentialRecoveries,
   rolesWithIdentityPermissions,
   uuidv7,
@@ -253,17 +256,112 @@ describe('Identity events for Profile', () => {
     const provisioned = event('identity.provisioned', { identityId: 'p', kind: 'person' })
     await handle(provisioned)
     await handle(event('membership.ended', { membershipId: 'm', identityId: 'p', groupId: 'g' }))
-    await handle(event('identity.paused', { identityId: 'p' }))
+    await handle(event('identity.resumed', { identityId: 'p' }))
+    await handle(event('group.renamed', { groupId: 'g' }))
     await handle(event('group.created', { groupId: 'g', lineage: ['g'], foundingOwnerId: 'o' }))
     await handle(event('identity.closed', { identityId: 'p' }))
     expect(forwarded[0]).toBe(provisioned)
-    expect(order).toEqual(['profile identity.provisioned', 'profile membership.ended', 'profile identity.closed', 'delete p'])
+    expect(order).toEqual(['profile identity.provisioned', 'profile membership.ended', 'profile group.renamed', 'profile identity.closed', 'delete p'])
   })
 
   it('needs no Profile, and fails the event when Profile fails, so the relay delivers it again', async () => {
     await expect(createIdentityEventHandler(deps)(event('identity.provisioned', { identityId: 'p' }))).resolves.toBeUndefined()
     const failing = createIdentityEventHandler({ ...deps, async applyProfileEvent() { throw new Error('profile down') } })
     await expect(failing(event('identity.closed', { identityId: 'p' }))).rejects.toThrow('profile down')
+  })
+})
+
+describe('legal holds and erasure on closure', () => {
+  const event = (type: string, data: Record<string, unknown>) => ({ eventId: 'e', type, occurredAt: '2026-10-09T20:00:00.000Z', correlationId: 'c', data })
+  const setup = (held: readonly ('profile' | 'authentication' | 'authorisation')[]) => {
+    const log: string[] = []
+    const erasures = {
+      async deleteAccount(id: string) { log.push(`delete ${id}`) },
+      async erasePrincipal(input: { principalId: string, actorPrincipalId: string }) { log.push(`erase ${input.principalId} by ${input.actorPrincipalId}`) },
+      async recordRequestPart(input: { identityId: string, part: string, correlationId: string }) { log.push(`done ${input.part} ${input.identityId} ${input.correlationId}`) },
+    }
+    const handle = createIdentityEventHandler({
+      ...erasures,
+      async revokeSessions() {},
+      async discardAccount() {},
+      async assignRole() {},
+      async unassignRole() {},
+      async applyProfileEvent(received) { log.push(`profile ${received.type}`) },
+      async heldParts() { return held },
+    })
+    return { log, handle, profile: createProfileEventHandler(erasures) }
+  }
+
+  it('erases Authentication and Authorisation after Profile, and tells Profile each part is done', async () => {
+    const { log, handle } = setup([])
+    await handle(event('identity.closed', { identityId: 'p' }))
+    expect(log).toEqual(['profile identity.closed', 'delete p', 'done authentication p c', 'erase p by iam-integration', 'done authorisation p c'])
+  })
+
+  it('leaves held parts alone until Profile says the hold has ended for a closed identity', async () => {
+    const { log, handle, profile } = setup(['authentication', 'profile'])
+    await handle(event('identity.closed', { identityId: 'p' }))
+    expect(log).toEqual(['profile identity.closed', 'erase p by iam-integration', 'done authorisation p c'])
+    log.length = 0
+    await profile(event('profile.legal-hold-ended', { identityId: 'p', released: ['authentication'], identityClosed: false }))
+    await profile(event('profile.legal-hold-placed', { identityId: 'p' }))
+    expect(log).toEqual([])
+    await profile(event('profile.legal-hold-ended', { identityId: 'p', released: ['authentication', 'profile'], identityClosed: true }))
+    expect(log).toEqual(['delete p', 'done authentication p c'])
+  })
+
+  it('fails the event when the holds cannot be read, so nothing is erased that might be held', async () => {
+    const handle = createIdentityEventHandler({
+      async revokeSessions() {},
+      async discardAccount() {},
+      async deleteAccount() { throw new Error('must not erase') },
+      async assignRole() {},
+      async unassignRole() {},
+      async heldParts() { throw new Error('profile down') },
+    })
+    await expect(handle(event('identity.closed', { identityId: 'p' }))).rejects.toThrow('profile down')
+  })
+})
+
+describe('Profile\'s data-subject request coordination', () => {
+  it('asks each member for its part by its own name for the person, and a missing member holds nothing', async () => {
+    const calls: unknown[] = []
+    const coordinator = profileRequestCoordinatorFromMembers({
+      async exportIdentity(input) { calls.push(['identity', input]); return { identity: 'i' } },
+      async exportAuthentication(input) { calls.push(['authentication', input]); return null },
+    })
+    expect(await coordinator.exportPart({ identityId: 'p', part: 'identity', correlationId: 'c' })).toEqual({ identity: 'i' })
+    expect(await coordinator.exportPart({ identityId: 'p', part: 'authentication', correlationId: 'c' })).toBeNull()
+    expect(await coordinator.exportPart({ identityId: 'p', part: 'authorisation', correlationId: 'c' })).toBeNull()
+    expect(calls).toEqual([['identity', { identityId: 'p', correlationId: 'c' }], ['authentication', { principalId: 'p', correlationId: 'c' }]])
+  })
+
+  it('rejects for a failing member or an unknown part, never answering as if nothing were held', async () => {
+    const coordinator = profileRequestCoordinatorFromMembers({ async exportAuthorisation() { throw new Error('down') } })
+    await expect(coordinator.exportPart({ identityId: 'p', part: 'authorisation', correlationId: 'c' })).rejects.toThrow('down')
+    await expect(coordinator.exportPart({ identityId: 'p', part: 'toString' as never, correlationId: 'c' })).rejects.toThrow()
+  })
+})
+
+describe('Profile access decision from Authorisation', () => {
+  const subject = { principalId: 'a', authenticatedAt: '2026-10-09T20:00:00.000Z', assurance: { level: 'aal1' as const, phishingResistant: false } }
+
+  it('asks about the group itself, and any refusal is false', async () => {
+    const asked: unknown[] = []
+    const decision = profileAccessDecisionFromAuthorisation({
+      async authorise(input) {
+        asked.push(input)
+        return input.resource.id === 'g' ? { allowed: true } : { allowed: false, reason: 'insufficient-assurance', requirement: { minimumLevel: 'aal2', phishingResistant: false, maxAuthenticationAgeSeconds: null } }
+      },
+    })
+    expect(await decision.allows({ subject, permission: 'profile.suspended-people:view', groupId: 'g' })).toBe(true)
+    expect(await decision.allows({ subject, permission: 'profile.suspended-people:view', groupId: 'h' })).toBe(false)
+    expect(asked[0]).toEqual({ subject, permission: 'profile.suspended-people:view', resource: { type: 'profile.suspended-people', id: 'g', owningGroupId: 'g' }, requestTenantId: null })
+  })
+
+  it('rejects when Authorisation fails, so Profile fails closed', async () => {
+    const decision = profileAccessDecisionFromAuthorisation({ async authorise() { throw new Error('down') } })
+    await expect(decision.allows({ subject, permission: 'profile.suspended-people:view', groupId: 'g' })).rejects.toThrow('down')
   })
 })
 

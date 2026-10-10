@@ -36,6 +36,8 @@ Each row is a port declared by the consuming member and supplied by the host.
 | Identity | Access decision | Authorisation | Whether a subject may exercise one of Identity's permissions on a group, for every change Identity does not reserve to the person themselves |
 | Identity | Approval policy | Authorisation | A permission's risk level, whether an approver qualifies at decision time, and how many others qualify (to choose the approval route) |
 | Profile | Disclosure context | Identity | For one viewer and a batch of subjects: each relationship (self, same group, former member, same tenant, none) and standing, and the group's departure data policy |
+| Profile | Access decision | Authorisation | Whether a viewer holds one of Profile's permissions on a group: today `profile.suspended-people:view`, under which a group's administrators see its suspended members by name |
+| Profile | Request coordination | Identity, Authentication, Authorisation | Each member's part of a data-subject access request, from its server-only export ([data-subject requests](processes/data-subject-requests.md)) |
 | Domain capabilities | Display names | Profile | Names to show for a list of identity identifiers, filtered by Profile's disclosure rules for the viewer |
 | Domain capabilities | Visible scopes | Authorisation | The groups in a tenant whose information the caller may read with a given permission (ADR-0006) |
 
@@ -62,6 +64,12 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `approval.requested`, `approval.decided` | Identity or Authorisation | Notification capabilities |
 | `approval.held` | Identity | Notification capabilities (the group's co-owners: a change waits out a recovery hold or a less safe safety period) |
 | `profile.anonymised` | Profile | Domain capabilities that cached names |
+| `profile.departure-anonymised` | Profile | Domain capabilities that cached a leaver's name in the group |
+| `profile.request-opened`, `profile.request-completed`, `profile.request-escalated` | Profile | Operators' tooling and audit ([data-subject requests](processes/data-subject-requests.md)) |
+| `profile.legal-hold-placed`, `profile.legal-hold-ended` | Profile | Audit; on ending, the host's handler erases the parts the hold deferred |
+| `profile.contact-verified` | Profile | Audit; capabilities that may now use a verified contact detail, through Profile |
+| `authentication.account-deleted` | Authentication | Audit |
+| `authorisation.principal-erased` | Authorisation | Audit |
 | `authentication.sessions-revoked` | Authentication | Audit |
 | `authentication.credentials-recovered` | Authentication | Identity (the recovery hold, [recovery](processes/recovery.md)) |
 

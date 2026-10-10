@@ -1,4 +1,4 @@
-import type { IdentityEventLike } from './members'
+import type { IdentityEventLike, ProfileEventLike, ProfileHeldPart } from './members'
 
 /**
  * What the other members do when Identity announces a change
@@ -23,16 +23,55 @@ export interface IdentityEventHandlerDependencies {
   /**
    * Profile's `applyProfileIdentityEvent`, when the host composes Profile: it
    * receives `identity.provisioned` (an empty record for a person),
-   * `membership.ended` (how the leaver is shown in the group) and
-   * `identity.closed` (erasure), unchanged. Profile is idempotent by event id.
+   * `membership.ended` (how the leaver is shown in the group),
+   * `identity.closed` (erasure), and `identity.paused` and `group.renamed`
+   * (parts of data-subject requests done), unchanged. Profile is idempotent
+   * by event id.
    */
   applyProfileEvent?(event: IdentityEventLike): Promise<unknown>
   /** The role each membership kind holds in its group; null for none. Defaults: `member` for members, `viewer` for guests. */
   membershipRoles?: { member: string | null, guest: string | null }
+  /**
+   * Authorisation's `eraseAuthorisationPrincipal`: removes a closed
+   * identity's assignments and grants (account closure step 6).
+   */
+  erasePrincipal?(input: { principalId: string, actorPrincipalId: string }): Promise<unknown>
+  /**
+   * Profile's `profileLegalHoldParts`: the parts of a person's data under
+   * legal hold now. A held part is not erased on closure; Profile's
+   * `profile.legal-hold-ended` brings it back (`createProfileEventHandler`).
+   */
+  heldParts?(identityId: string): Promise<readonly ProfileHeldPart[]>
+  /**
+   * Profile's `recordProfileRequestPart`: tells Profile a member's erasure is
+   * done, for any erasure request it holds for the identity.
+   */
+  recordRequestPart?(input: { identityId: string, part: 'authentication' | 'authorisation', correlationId: string }): Promise<unknown>
 }
 
-/** The Identity events Profile keeps records by (Profile contract §8). */
-const PROFILE_EVENTS: ReadonlySet<string> = new Set(['identity.provisioned', 'membership.ended', 'identity.closed'])
+/** The erasures Authentication and Authorisation owe a closed identity, skipping held parts. */
+async function eraseClosedIdentity(
+  deps: Pick<IdentityEventHandlerDependencies, 'deleteAccount' | 'erasePrincipal' | 'recordRequestPart'>,
+  input: { identityId: string, correlationId: string, parts: readonly ('authentication' | 'authorisation')[] },
+): Promise<void> {
+  const { identityId, correlationId } = input
+  if (input.parts.includes('authentication')) {
+    await deps.deleteAccount(identityId)
+    await deps.recordRequestPart?.({ identityId, part: 'authentication', correlationId })
+  }
+  if (input.parts.includes('authorisation') && deps.erasePrincipal) {
+    await deps.erasePrincipal({ principalId: identityId, actorPrincipalId: IDENTITY_EVENT_ACTOR })
+    await deps.recordRequestPart?.({ identityId, part: 'authorisation', correlationId })
+  }
+}
+
+/**
+ * The Identity events Profile acts on (Profile contract §8): records,
+ * departures and erasure, and the evidence that closes a data-subject
+ * request's restriction (`identity.paused`) and correction (`group.renamed`)
+ * parts.
+ */
+const PROFILE_EVENTS: ReadonlySet<string> = new Set(['identity.provisioned', 'membership.ended', 'identity.closed', 'identity.paused', 'group.renamed'])
 
 /** The actor recorded on role changes made because of Identity's events. */
 export const IDENTITY_EVENT_ACTOR = 'iam-integration'
@@ -56,9 +95,13 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
       case 'identity.provisioning-expired':
         if (identityId) await deps.discardAccount(identityId)
         return
-      case 'identity.closed':
-        if (identityId) await deps.deleteAccount(identityId)
+      case 'identity.closed': {
+        if (!identityId) return
+        const held = new Set(deps.heldParts ? await deps.heldParts(identityId) : [])
+        const parts = (['authentication', 'authorisation'] as const).filter(part => !held.has(part))
+        await eraseClosedIdentity(deps, { identityId, correlationId: event.correlationId, parts })
         return
+      }
       case 'group.created': {
         const founder = text(data.foundingOwnerId)
         if (groupId && founder) await deps.assignRole({ principalId: founder, groupId, roleId: 'owner', actorPrincipalId })
@@ -87,5 +130,22 @@ export function createIdentityEventHandler(deps: IdentityEventHandlerDependencie
       default:
         // Other events need nothing from Authentication or Authorisation.
     }
+  }
+}
+
+/**
+ * What the other members do when Profile announces a change. Today one
+ * event: `profile.legal-hold-ended` names the parts no hold covers any more
+ * (`released`) and whether the identity has closed (`identityClosed`). For a
+ * closed identity, the erasures the hold deferred on `identity.closed` happen
+ * now. Profile erases its own part itself. Idempotent: every erasure is.
+ */
+export function createProfileEventHandler(deps: Pick<IdentityEventHandlerDependencies, 'deleteAccount' | 'erasePrincipal' | 'recordRequestPart'>) {
+  return async function handle(event: ProfileEventLike): Promise<void> {
+    if (event.type !== 'profile.legal-hold-ended') return
+    const { identityId, released, identityClosed } = event.data
+    if (typeof identityId !== 'string' || identityClosed !== true || !Array.isArray(released)) return
+    const parts = (['authentication', 'authorisation'] as const).filter(part => released.includes(part))
+    await eraseClosedIdentity(deps, { identityId, correlationId: event.correlationId, parts })
   }
 }
