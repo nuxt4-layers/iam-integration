@@ -36,4 +36,4 @@ Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform
 
 ## Status
 
-Documentation, and the reference adapters between all four members (`server/adapters/`, [adapters](docs/adapters.md)), composed and tested end to end in `platform-test-harness`. Phase 6 (end of life: group deletion, the tenant lifecycle and retention) is complete; phase 7 (service identities: their names, memberships, lifecycle and machine credentials) is in progress; see the [roadmap](docs/roadmap.md).
+1.0.0. Documentation, the [operations guide](docs/operations.md), the [OWASP ASVS mapping](docs/asvs.md) and the reference adapters between all four members (`server/adapters/`, [adapters](docs/adapters.md)), composed and tested end to end in `platform-test-harness`. Every phase is complete; see the [roadmap](docs/roadmap.md) and [CHANGELOG.md](CHANGELOG.md).
