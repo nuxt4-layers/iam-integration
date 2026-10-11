@@ -26,7 +26,6 @@ Agreed in the design discussion; to be specified before the phase that needs the
 | Process | What was agreed | Members |
 |---|---|---|
 | Jurisdiction policy packs | Each tenant carries a jurisdiction (selecting a policy pack: UK GDPR, EU GDPR, CCPA and so on, with deadlines, legal bases and retention rules) and a data region (ADR-0006 §7). Packs need sign-off by someone qualified in each jurisdiction's law | Host, Profile, all members |
-| Just-in-time elevation and access reviews | Improvement register items 7 and 9 | Authorisation, Identity |
 
 ## Conventions
 
