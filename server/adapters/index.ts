@@ -20,4 +20,6 @@ export { createAuthenticationEventHandler, reconcileCredentialRecoveries } from 
 export { profileAccessDecisionFromAuthorisation, profileRequestCoordinatorFromMembers } from './requests'
 export type { RecoveryDependencies } from './recovery'
 export { rolesWithIdentityPermissions } from './roles'
+export { authenticationServiceGovernanceFromIdentity, createServiceCredentialNoticeHandler, SERVICE_CREDENTIAL_NOTICES } from './services'
+export type { ServiceCredentialNotice, ServiceCredentialNoticeType } from './services'
 export { identitySubjectResolverFromAuthentication } from './subject'

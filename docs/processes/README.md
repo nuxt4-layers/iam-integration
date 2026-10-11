@@ -16,6 +16,7 @@ Processes that span more than one IAM member. A process that touches one member 
 | [Account closure](account-closure.md) | The person closes their account | All |
 | [Data-subject requests](data-subject-requests.md) | Access, correction, export, erasure or objection | All, coordinated by Profile |
 | [Recovery](recovery.md) | Lost credentials; orphaned group | Authentication, Identity, Authorisation |
+| [Service identities](service-identities.md) | A service identity created, named, given credentials and memberships, suspended or closed | Identity, Authentication, Authorisation |
 | [Break-glass access](break-glass.md) | An incident with too few operators; provisioning, rotation and testing of break-glass accounts | Identity, Authentication, host |
 
 ## Planned processes

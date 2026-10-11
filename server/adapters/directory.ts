@@ -4,7 +4,10 @@ import type { AuthorisationDirectoryLike, AuthorisationGroupLike, IdentityDirect
  * Authorisation's directory port (contract 3), from Identity's directory
  * (architecture §3).
  *
- * Each membership's effective status passes through: Identity has already
+ * The actor's kind (person, service or break-glass) passes through, so
+ * Authorisation can refuse a service identity's request or decision on an
+ * access change (docs/processes/service-identities.md). Each membership's
+ * effective status passes through: Identity has already
  * folded in its dates and the identity's state. The identity's own state
  * becomes the principal's status, which governs the personal group: `active`
  * and `paused` as they are, anything else (`suspended`, `closure-pending`,
@@ -25,6 +28,7 @@ export function authorisationDirectoryFromIdentity(input: { directory: IdentityD
       if (!actor) return null
       return {
         principalId: actor.identityId,
+        kind: actor.kind,
         status: principalStatus(actor.identityState),
         personalGroup: actor.personalGroup ? group(actor.personalGroup) : null,
         memberships: actor.memberships.map(membership => ({
