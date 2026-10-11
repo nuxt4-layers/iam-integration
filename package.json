@@ -1,6 +1,6 @@
 {
   "name": "@nuxt4-layers/iam-integration",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Reference adapters between the IAM suite's members (Identity, Authentication, Authorisation, Profile): ports, event handling and credential recovery, with no dependency on any member.",
