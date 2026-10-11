@@ -44,6 +44,7 @@ Rules:
 3. Entering `paused`, `suspended` or `closure-pending` revokes the identity's sessions.
 4. A `closed` identity is never reopened. Its identifier is never reissued.
 5. A `pending` identity becomes `active` only when Authentication confirms that the sign-in identifier is verified; confirmation creates the personal group atomically ([provisioning](processes/provisioning.md)). An identity never confirmed is closed after 24 hours. Service and break-glass identities are created `active`.
+7. A service identity is owned by a group, has a safe name and no personal group, and is suspended, reinstated and closed by its owning group's administrators with approval, or suspended by a platform operator; closing it has no grace period ([service identities](processes/service-identities.md)).
 6. Suspension may be imposed on an `active` or a `paused` identity; reinstatement restores the state held before it. Closure may be requested from `active`, `paused` or `suspended`; cancellation restores the state held before it.
 
 ## 2. Membership
@@ -91,6 +92,8 @@ Contract 2 treated only `active` as conferring access; the adapter then mapped `
 |---|---|---|
 | `member` | An ordinary member | The group's default role; no end date |
 | `guest` | An outside collaborator | A restricted default role set by the group; an end date 90 days after joining, renewable by a group administrator |
+
+A service identity is always a `member`, never a guest or an owner, and only in groups of its owning group's tenant ([service identities](processes/service-identities.md#memberships)).
 
 A guest is visible, and is paused, suspended and ended through the same lifecycle as a member. Guests are preferred over Authorisation's external grants, which stay off by default and remain for one-off sharing of a single resource across tenants. Identities are global, so membership of groups in several tenants needs no guest kind; `guest` means only a restricted role and an end date.
 

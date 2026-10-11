@@ -27,7 +27,7 @@ The founding owner is an ordinary owner afterwards: the title confers nothing be
 
 **Actor:** an owner, with approval at `high` risk.
 
-1. **Identity** sets the group `archived`, refuses new memberships and writes `group.archived`.
+1. **Identity** sets the group `archived`, refuses new memberships and writes `group.archived`. A group that owns a service identity that is not suspended or closed cannot be archived ([service identities](service-identities.md#lifecycle)).
 2. Existing memberships end or remain read-only according to the group's archive setting; ended memberships follow [joining and leaving](joining-and-leaving.md) for departure data.
 3. Domain capabilities treat the group's information as read-only.
 

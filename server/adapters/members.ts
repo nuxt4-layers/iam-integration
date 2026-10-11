@@ -13,6 +13,8 @@
 // Identity
 // ---------------------------------------------------------------------------
 
+export type IdentityKindLike = 'person' | 'service' | 'break-glass'
+
 export type IdentitySignInOutcome = 'allowed' | 'resume-only' | 'cancel-closure-only' | 'verification-only' | 'refused'
 
 /** Identity's provisioning port (`getIdentityProvisioning()`). */
@@ -32,6 +34,8 @@ export interface IdentityGroupDescriptionLike {
 export interface IdentityDirectoryLike {
   resolveActor(identityId: string, options: { consistency: 'strong' | 'bounded' }): Promise<{
     identityId: string
+    /** A person, a service identity or a break-glass identity. */
+    kind: IdentityKindLike
     /** The identity's own state (never `pending`: the directory answers null for those). */
     identityState: 'active' | 'paused' | 'suspended' | 'closure-pending' | 'closed'
     personalGroup: IdentityGroupDescriptionLike | null
@@ -133,6 +137,8 @@ export interface IdentityAccessGovernanceLike {
 /** Authentication's `AuthenticatedPrincipal`, the fields Identity needs. */
 export interface AuthenticatedPrincipalLike {
   principalId: string
+  /** A service principal authenticated with a service token; a person otherwise (older releases say nothing). */
+  kind?: 'person' | 'service'
   authenticatedAt: string
   assurance: { level: 'aal1' | 'aal2', phishingResistant: boolean }
 }
@@ -150,6 +156,30 @@ export interface AuthenticationEventLike {
   type: string
   occurredAt: string
   principalId: string | null
+  /** A service credential's events only: which credential, its kind and expiry, and why it ended. */
+  credential?: { credentialId: string, kind: 'secret' | 'public-key', expiresAt: string, endedHow?: 'revoked' | 'expired' | 'identity-closed' | null } | null
+}
+
+/**
+ * Identity's `getIdentityServiceIdentities()`: what Authentication's
+ * service-governance port and the owners' notices need of it
+ * (docs/processes/service-identities.md).
+ */
+export interface IdentityServiceIdentitiesLike {
+  /**
+   * Whether the subject may manage the service identity's credentials now:
+   * an active service identity, and `identity.service-identities:manage` in
+   * its owning group. False for anything else, a person or unknown identity
+   * included.
+   */
+  mayManageCredentials(input: { subject: IdentitySubjectLike, identityId: string, correlationId: string }): Promise<boolean>
+  /** A service identity's owning group and that group's owners, for notices; null when it is not a service identity. */
+  describe(input: { identityId: string, correlationId: string }): Promise<{ identityId: string, owningGroupId: string, ownerIds: readonly string[] } | null>
+}
+
+/** Authentication's service-governance port (`provideAuthenticationServiceGovernance`). */
+export interface AuthenticationServiceGovernanceLike {
+  mayManage(input: { principal: AuthenticatedPrincipalLike, serviceIdentityId: string }): Promise<boolean>
 }
 
 export interface AuthenticationCredentialRecoveryLike {
@@ -181,6 +211,8 @@ export interface AuthorisationGroupLike {
 export interface AuthorisationDirectoryLike {
   resolveActor(principalId: string, options: { consistency: 'strong' | 'bounded' }): Promise<{
     principalId: string
+    /** Whose principal: a person, a service or a break-glass account (docs/processes/service-identities.md). */
+    kind: IdentityKindLike
     status: 'active' | 'paused' | 'suspended'
     personalGroup: AuthorisationGroupLike | null
     memberships: { group: AuthorisationGroupLike, status: 'active' | 'paused' | 'suspended' | 'ended' }[]

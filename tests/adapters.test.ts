@@ -3,10 +3,12 @@ import {
   authenticationIdentityFromIdentity,
   authorisationDirectoryFromIdentity,
   authorisationGovernanceFromIdentity,
+  authenticationServiceGovernanceFromIdentity,
   createAuthenticationEventHandler,
   createDisposalConfirmationHandler,
   createIdentityEventHandler,
   createProfileEventHandler,
+  createServiceCredentialNoticeHandler,
   identityAccessDecisionFromAuthorisation,
   identityApprovalPolicyFromAuthorisation,
   identitySubjectResolverFromAuthentication,
@@ -20,7 +22,7 @@ import {
   tenantExportFromMembers,
   uuidv7,
 } from '../server/adapters'
-import type { IdentityJoiningLike, IdentityProvisioningLike, InvitationMessage } from '../server/adapters'
+import type { IdentityJoiningLike, IdentityProvisioningLike, IdentityServiceIdentitiesLike, InvitationMessage, ServiceCredentialNotice } from '../server/adapters'
 
 const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -120,6 +122,7 @@ describe('Authorisation directory from Identity', () => {
     const actor = await directory.resolveActor('p', { consistency: 'strong' })
     expect(actor).toEqual({
       principalId: 'p',
+      kind: 'person',
       status: 'active',
       personalGroup: { groupId: 'personal', lineage: ['personal'], tenantId: 't' },
       memberships: [
@@ -687,5 +690,69 @@ describe('tenant governance export', () => {
     await expect(failing.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).rejects.toThrow('down')
     const alone = tenantExportFromMembers({ async exportIdentityTenant() { return { groups: [] } } })
     expect(await alone.exportTenant({ subject, tenantId: 't', correlationId: 'c' })).toEqual({ identity: { groups: [] }, authorisation: null })
+  })
+})
+
+describe('service identities', () => {
+  const person = { principalId: 'person-1', authenticatedAt: '2026-10-11T09:00:00.000Z', assurance: { level: 'aal2' as const, phishingResistant: true } }
+  const asked: unknown[] = []
+  let answer: boolean | Error = true
+  const services: IdentityServiceIdentitiesLike = {
+    async mayManageCredentials(input) {
+      asked.push(input)
+      if (answer instanceof Error) throw answer
+      return answer
+    },
+    async describe({ identityId }) {
+      return identityId === 'service-1' ? { identityId, owningGroupId: 'group-1', ownerIds: ['owner-1', 'owner-2'] } : null
+    },
+  }
+
+  it('asks Identity whether a person may manage a service identity\'s credentials, passing only the subject\'s fields', async () => {
+    const governance = authenticationServiceGovernanceFromIdentity({ services })
+    answer = true
+    expect(await governance.mayManage({ principal: { ...person, kind: 'person' }, serviceIdentityId: 'service-1' })).toBe(true)
+    expect(asked.at(-1)).toEqual({ subject: person, identityId: 'service-1', correlationId: expect.stringMatching(UUID) })
+    answer = false
+    expect(await governance.mayManage({ principal: person, serviceIdentityId: 'service-1' })).toBe(false)
+  })
+
+  it('never lets a service principal manage credentials, and rejects when Identity fails', async () => {
+    const governance = authenticationServiceGovernanceFromIdentity({ services })
+    const before = asked.length
+    expect(await governance.mayManage({ principal: { ...person, kind: 'service' }, serviceIdentityId: 'service-1' })).toBe(false)
+    expect(asked).toHaveLength(before)
+    answer = new Error('Identity unavailable')
+    await expect(governance.mayManage({ principal: person, serviceIdentityId: 'service-1' })).rejects.toThrow('Identity unavailable')
+  })
+
+  it('tells the owning group\'s owners of each credential issued, revoked or expiring, with identifiers only', async () => {
+    const delivered: ServiceCredentialNotice[] = []
+    const handle = createServiceCredentialNoticeHandler({ services, async deliver(notice) { delivered.push(notice) } })
+    const credential = { credentialId: 'credential-1', kind: 'secret' as const, expiresAt: '2027-01-09T09:00:00.000Z' }
+    for (const type of ['authentication.service-credential-issued', 'authentication.service-credential-revoked', 'authentication.service-credential-expiring']) {
+      await handle({ type, occurredAt: '2026-10-11T09:00:00.000Z', principalId: 'service-1', credential })
+    }
+    expect(delivered.map(notice => notice.type)).toEqual(['authentication.service-credential-issued', 'authentication.service-credential-revoked', 'authentication.service-credential-expiring'])
+    expect(delivered[0]).toEqual({
+      type: 'authentication.service-credential-issued',
+      serviceIdentityId: 'service-1',
+      owningGroupId: 'group-1',
+      ownerIds: ['owner-1', 'owner-2'],
+      credentialId: 'credential-1',
+      credentialKind: 'secret',
+      expiresAt: '2027-01-09T09:00:00.000Z',
+      occurredAt: '2026-10-11T09:00:00.000Z',
+    })
+  })
+
+  it('ignores other events, events without a credential, and identities that are not service identities', async () => {
+    const delivered: ServiceCredentialNotice[] = []
+    const handle = createServiceCredentialNoticeHandler({ services, async deliver(notice) { delivered.push(notice) } })
+    const credential = { credentialId: 'credential-1', kind: 'public-key' as const, expiresAt: '2027-01-09T09:00:00.000Z' }
+    await handle({ type: 'authentication.signed-in', occurredAt: '2026-10-11T09:00:00.000Z', principalId: 'service-1', credential })
+    await handle({ type: 'authentication.service-credential-issued', occurredAt: '2026-10-11T09:00:00.000Z', principalId: 'service-1' })
+    await handle({ type: 'authentication.service-credential-issued', occurredAt: '2026-10-11T09:00:00.000Z', principalId: 'person-1', credential })
+    expect(delivered).toEqual([])
   })
 })

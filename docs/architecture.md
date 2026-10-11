@@ -40,6 +40,7 @@ Each row is a port declared by the consuming member and supplied by the host.
 | Profile | Access decision | Authorisation | Whether a viewer holds one of Profile's permissions on a group: today `profile.suspended-people:view`, under which a group's administrators see its suspended members by name |
 | Profile | Request coordination | Identity, Authentication, Authorisation | Each member's part of a data-subject access request, from its server-only export ([data-subject requests](processes/data-subject-requests.md)) |
 | Domain capabilities | Display names | Profile | Names to show for a list of identity identifiers, filtered by Profile's disclosure rules for the viewer |
+| Authentication | Service governance | Identity | Whether a signed-in person may manage a service identity's credentials now: an administrator of its owning group, for an active service identity ([service identities](processes/service-identities.md#credentials)) |
 | Each member | Legal holds | Identity, Profile | Whether a legal hold covers a group or tenant (Identity) or the member's part of a person's data (Profile), before retention or disposal deletes anything (§8) |
 | Domain capabilities | Visible scopes | Authorisation | The groups in a tenant whose information the caller may read with a given permission (ADR-0006) |
 
@@ -54,7 +55,8 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `identity.provisioned` | Identity | Profile (create an empty record) |
 | `identity.provisioning-expired` | Identity | Authentication (discard the unverified account) |
 | `identity.paused`, `identity.resumed` | Identity | Authentication (revoke sessions on pause), Profile (hide), notification capabilities (stop sending) |
-| `identity.suspended`, `identity.reinstated` | Identity | Authentication (revoke sessions; refuse sign-in), Profile |
+| `identity.suspended`, `identity.reinstated` | Identity | Authentication (revoke sessions and, for a service identity, its tokens; refuse sign-in), Profile |
+| `identity.renamed` | Identity | Audit (a service identity's name changed) |
 | `identity.closure-requested`, `identity.closure-cancelled`, `identity.closed` | Identity | Authentication, Profile, Authorisation, domain capabilities |
 | `membership.added`, `.paused`, `.resumed`, `.suspended`, `.reinstated`, `.dates-changed`, `.ended` | Identity | Authorisation (invalidate caches; apply the default or guest role by kind), Profile (disclosure), domain capabilities |
 | `group.created`, `group.renamed`, `group.reparented`, `group.owners-changed`, `group.orphaned`, `group.recovered`, `group.archived` | Identity | Authorisation (invalidate caches; assign and remove `owner`; review `group-and-descendants` assignments on reparenting) |
@@ -83,6 +85,8 @@ Each member publishes the lifecycle changes others must act on through a transac
 | `<member>.retention-applied` | Each member | Audit ([retention](processes/retention.md)) |
 | `authentication.sessions-revoked` | Authentication | Audit |
 | `authentication.credentials-recovered` | Authentication | Identity (the recovery hold, [recovery](processes/recovery.md)) |
+| `authentication.service-credential-issued`, `authentication.service-credential-revoked`, `authentication.service-credential-expiring` | Authentication | Notification capabilities (the owning group's owners, [service identities](processes/service-identities.md)); audit |
+| `authentication.service-token-issued` | Authentication | Audit |
 
 Rules for every event:
 

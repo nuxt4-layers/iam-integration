@@ -33,12 +33,12 @@ Resuming reverses each step and writes `membership.resumed`.
 **Actor:**
 
 - A **membership**: a group administrator, with a reason code. Suspending an owner is `critical` and needs [approval](approvals.md).
-- An **identity**: a tenant or platform administrator, with a reason code and approval at `high` risk. An identity can be suspended only for platform-wide reasons (abuse, legal order, security incident), never to settle a group dispute.
+- An **identity**: a tenant or platform administrator, with a reason code and approval at `high` risk. An identity can be suspended only for platform-wide reasons (abuse, legal order, security incident), never to settle a group dispute. A service identity is also suspended by its owning group's administrators, with approval in that group ([service identities](service-identities.md#lifecycle)).
 
 Steps (identity):
 
 1. **Identity** sets the identity `suspended` and writes `identity.suspended`.
-2. **Authentication** revokes every session and refuses sign-in.
+2. **Authentication** revokes every session and refuses sign-in; for a service identity, it ends every token and issues no more.
 3. **Authorisation** denies all access derived from memberships.
 4. **Profile** hides the person from everyone but the administrators of each group they belong to: a lookup with the purpose `administration` in that group shows them by display name only, never other details, to a viewer who holds `profile.suspended-people:view` (`high`, so at `aal2`) on the group, which Profile asks Authorisation through its access-decision port.
 

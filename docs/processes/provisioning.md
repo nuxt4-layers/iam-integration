@@ -4,7 +4,7 @@
 
 - A person signs up through Authentication.
 - A person accepts an invitation to a group (which provisions them first if they have no identity).
-- A tenant administrator creates a service (non-human) identity, at `high` risk.
+- An administrator of a group creates a service (non-human) identity owned by that group, at `high` risk ([service identities](service-identities.md)).
 
 ## Preconditions
 
@@ -25,7 +25,7 @@ Provisioning is two-step. Authentication's engine creates its user record, and n
 
 ## Steps (service identity)
 
-Identity creates the service identity `active` at once, owned by the group whose administrator created it, without a personal group (the group model leaves non-human lifecycles to explicit decision) and without Authentication's verification flow. The service identity is a member only of groups it is explicitly added to, and its credentials are issued by Authentication's service-credential flow when one exists.
+Identity creates the service identity `active` at once, with the safe name the change names, owned by the group whose administrator created it and homed in that group's tenant, without a personal group (the group model leaves non-human lifecycles to explicit decision) and without Authentication's verification flow. It is a member of no group, its owning group included, until it is added to one; the owning group's administrators then issue its machine credentials in Authentication. Both are specified in [service identities](service-identities.md).
 
 ## Failure handling
 
