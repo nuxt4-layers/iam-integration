@@ -1,6 +1,6 @@
 # Access Administration
 
-How people are given access in a group, and how it is taken away and reviewed: role definitions, role assignments, grants (sharing), a group's default roles, time-limited assignments and access reviews. **Authorisation** owns every record here and every pending change about it ([approvals](approvals.md)); **Identity** owns the groups, memberships and owners the rules read, and answers Authorisation's governance port. Profile names the people on the pages, through the host.
+How people are given access in a group, and how it is taken away and reviewed: role definitions, role assignments, grants (sharing), a group's default roles, time-limited assignments, just-in-time elevation and access reviews. **Authorisation** owns every record here and every pending change about it ([approvals](approvals.md)); **Identity** owns the groups, memberships and owners the rules read, and answers Authorisation's governance port. Profile names the people on the pages, through the host.
 
 ## Trigger and actors
 
@@ -44,7 +44,11 @@ Each group says which role a new member and a new guest receive (`member` and `v
 
 ## Time-limited assignments
 
-`role.assign` may carry an end date. An assignment past its end confers nothing at once, before Authorisation's maintenance (`runAuthorisationMaintenance`) removes it and writes `authorisation.role-expired`. Extending one is a new assignment, with its own approval. Just-in-time elevation is planned later (improvement register item 7).
+`role.assign` may carry an end date. An assignment past its end confers nothing at once, before Authorisation's maintenance (`runAuthorisationMaintenance`) removes it and writes `authorisation.role-expired`. Extending one is a new assignment, with its own approval.
+
+## Just-in-time elevation
+
+A role may be assigned as *eligible* (`role.assign` with `eligible: true`), with the risk, approval and end date of any assignment. An eligible assignment confers nothing until its holder activates it with `role.activate`, for 5 to 480 minutes and never beyond the assignment's end. Only the holder may ask. Activation is not a self-grant, because the access was approved when the assignment was made, but it takes the assignment's own risk, route, step-up and recovery hold, so a `high` or `critical` role waits for an approver other than the holder. Authorisation writes `authorisation.role-activated` with the activation's end. It runs in Authorisation alone (improvement register item 7; Authorisation's [contract §20](https://github.com/nuxt4-layers/authorisation/blob/32f6628ea7d009102c4aae789a1ef210977f04dd/docs/contracts.md)).
 
 ## Access reviews
 
@@ -69,6 +73,7 @@ A group's owners and administrators see every assignment in the group with when 
 | `authorisation.grant-created`, `authorisation.grant-revoked` | Authorisation | Grant, resource type and identifier, holder |
 | `authorisation.role-defined`, `authorisation.role-changed`, `authorisation.role-deleted`, `authorisation.roles-imported` | Authorisation | Tenant, role, digest |
 | `authorisation.group-access-changed`, `authorisation.review-overdue` | Authorisation | Group, setting codes, assignment |
+| `authorisation.role-activated` | Authorisation | Principal, group, role, end of the activation, change |
 
 All carry identifiers, codes and times only.
 
@@ -78,6 +83,7 @@ All carry identifiers, codes and times only.
 - Assigning a role to oneself, or confirming one's own assignment, is refused outside one's personal group; sharing from one's personal group applies at once after step-up, and is refused without it.
 - `owner` is never assigned or removed through Authorisation.
 - A time-limited assignment confers nothing after its end, before maintenance runs.
+- An eligible assignment confers nothing until its holder activates it; an activation of a `high` role waits for an approver other than the holder and confers only for the minutes asked; activating someone else's assignment is refused.
 - A new member receives the group's default role; a guest's default role can hold no high-risk permission.
 - An assignment not confirmed within the review interval is shown overdue and still works until removed.
 - A custom role is defined only by an owner of the tenant's root group, with an approval.

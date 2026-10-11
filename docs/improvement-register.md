@@ -13,19 +13,19 @@ Status values: **Recorded** (decided and specified in the document named), **Pla
 | 2 | Durable events through a transactional outbox | All members | Recorded | [Architecture](architecture.md) §4; Data Store Security Standard §5 |
 | 3 | Suspending, pausing an account or closing an identity ends its sessions | Identity → Authentication | Recorded | ADR-0005 §2.9; [Pausing and suspension](processes/pausing-and-suspension.md); Authentication change in the [roadmap](roadmap.md) |
 | 4 | Data-subject rights (access, export, correction, erasure) across every member | Profile coordinates; all members | Recorded | [Data-subject requests](processes/data-subject-requests.md); [Account closure](processes/account-closure.md) |
-| 5 | SCIM 2.0-compatible data model: `externalId` on identities and groups, an `active` flag derived from state, SCIM user and group shapes | Identity (structure), Profile (attributes) | Planned | Identity phase 1 contract |
-| 6 | Safe names: Unicode NFC, reject invisible and control characters, detect confusable look-alikes | Identity (group names), Profile (person names) | Planned | Identity and Profile phase 1 |
+| 5 | SCIM 2.0-compatible data model: `externalId` on identities and groups, an `active` flag derived from state, SCIM user and group shapes | Identity (structure), Profile (attributes) | Recorded | Identity's [contract §16](https://github.com/nuxt4-layers/identity/blob/0a533d7921ce50f78d01591df10b64b73f9ae51b/docs/contracts.md) (`shared/scim.ts`); Profile's attributes use the standard claim names (item 17) |
+| 6 | Safe names: Unicode NFC, reject invisible and control characters, detect confusable look-alikes | Identity (group names), Profile (person names) | Recorded | Identity's [contract §5.4](https://github.com/nuxt4-layers/identity/blob/0a533d7921ce50f78d01591df10b64b73f9ae51b/docs/contracts.md); Profile's [contract](https://github.com/nuxt4-layers/profile/blob/45fa80c6b6f4fd077bc5729f48cc9dc6ac4bceed/docs/contracts.md) attribute rules |
 
 ## Security
 
 | # | Improvement | Owner | Status | Where recorded or planned |
 |---|---|---|---|---|
-| 7 | Time-limited role assignments (`expiresAt`) and just-in-time elevation for critical roles | Authorisation | Recorded in part | Time-limited assignments in [access administration](processes/access-administration.md); just-in-time elevation planned |
+| 7 | Time-limited role assignments (`expiresAt`) and just-in-time elevation for critical roles | Authorisation | Recorded | Time-limited assignments and just-in-time elevation in [access administration](processes/access-administration.md); Authorisation's [contract §20](https://github.com/nuxt4-layers/authorisation/blob/32f6628ea7d009102c4aae789a1ef210977f04dd/docs/contracts.md) |
 | 8 | Separation of duties: nobody grants themselves a role or access at any risk level (outside their own personal group); two-person rule for `high` and `critical` | Authorisation, Identity | Recorded | ADR-0005 §2.4; [Approvals](processes/approvals.md) |
 | 9 | Access reviews: who holds what, since when, for owners to re-confirm or remove | Authorisation, Identity | Recorded | [Access administration](processes/access-administration.md) |
 | 10 | Break-glass emergency access | Host procedure, Authentication, Identity | Recorded | ADR-0007: passkey-only, no standing privileges, suspension and orphaned-group recovery only, alert and mandatory review on every use |
 | 11 | Row-level security on tenant- and group-isolated tables, with `SET LOCAL` and a non-owner runtime role | Identity, Authorisation | Recorded | ADR-0006 §5; Data Store Security Standard §3.5 |
-| 12 | Coarse errors in Identity: "not found" and "forbidden" never reveal whether a group, member or account exists | Identity | Planned | Identity phase 1 contract (error codes), matching Authorisation; invitations already specified in [Joining and leaving](processes/joining-and-leaving.md) |
+| 12 | Coarse errors in Identity: "not found" and "forbidden" never reveal whether a group, member or account exists | Identity | Recorded | Identity's [contract](https://github.com/nuxt4-layers/identity/blob/0a533d7921ce50f78d01591df10b64b73f9ae51b/docs/contracts.md) error codes, matching Authorisation; invitations already specified in [Joining and leaving](processes/joining-and-leaving.md) |
 | 13 | Correlation identifiers on every request, port call and event | All members | Recorded | [Architecture](architecture.md) §5 |
 | 14 | Shared hardened CI: reusable workflows and the dependency-review allow-list in the organisation's `.github` repository | Organisation | Planned | Separate task once Identity's CI exists, so three layer repositories can adopt it together |
 
