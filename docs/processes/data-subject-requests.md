@@ -12,12 +12,14 @@ Profile is the person's single point of contact for requests about their data. I
 
 Each request names the members' parts it needs. A part is `pending`, `done`, `exempt` (refused, with a reason code), or `held` (under legal hold).
 
-| Request | Profile | Identity | Authentication | Authorisation | Domain capabilities |
-|---|---|---|---|---|---|
-| Access | Record, disclosure settings, departures, requests and holds | Identity, external identifiers, every membership (`exportIdentityData`) | Sign-in identifiers, factor types and times (never secrets), sessions (never tokens) (`exportAuthenticationData`) | Role assignments and the grants held (`exportAuthorisationData`) | Through a host-supplied export port, per capability (planned) |
-| Correction | The person corrects their own record | Rename each group named in the request whose name identifies the requester | Sign-in identifier change, through Authentication's own flow | — | Their own records, through their contracts |
-| Erasure | Delete the record and key (anonymisation) | Close the identity ([account closure](account-closure.md)) | Delete the account (`deleteAuthenticationAccount`) | Remove assignments and grants (`eraseAuthorisationPrincipal`) | Delete or unlink as their purpose allows |
-| Restriction or objection | Every audience set to `nobody` | Optionally, pause the identity (the person's own action) | — | — | Stop the processing objected to |
+| Request | Profile | Identity | Authentication | Authorisation | Configuration | Domain capabilities |
+|---|---|---|---|---|---|---|
+| Access | Record, disclosure settings, departures, requests and holds | Identity, external identifiers, every membership (`exportIdentityData`) | Sign-in identifiers, factor types and times (never secrets), sessions (never tokens) (`exportAuthenticationData`) | Role assignments and the grants held (`exportAuthorisationData`) | The person's own account settings and their history (`exportConfigurationAccountData`) | Through a host-supplied export port, per capability (planned) |
+| Correction | The person corrects their own record | Rename each group named in the request whose name identifies the requester | Sign-in identifier change, through Authentication's own flow | — | The person changes their own account settings | Their own records, through their contracts |
+| Erasure | Delete the record and key (anonymisation) | Close the identity ([account closure](account-closure.md)) | Delete the account (`deleteAuthenticationAccount`) | Remove assignments and grants (`eraseAuthorisationPrincipal`) | Deleted by the configuration layer itself on `identity.closed`; not a part of the request | Delete or unlink as their purpose allows |
+| Restriction or objection | Every audience set to `nobody` | Optionally, pause the identity (the person's own action) | — | — | — | Stop the processing objected to |
+
+The configuration layer is not a member of the suite, but holds settings for a person's own account; where the host composes it, Profile's `configuration` part covers them, and where it does not, the part holds nothing.
 
 ## Steps
 

@@ -339,11 +339,15 @@ describe('Profile\'s data-subject request coordination', () => {
     const coordinator = profileRequestCoordinatorFromMembers({
       async exportIdentity(input) { calls.push(['identity', input]); return { identity: 'i' } },
       async exportAuthentication(input) { calls.push(['authentication', input]); return null },
+      async exportConfiguration(input) { calls.push(['configuration', input]); return { values: [] } },
     })
     expect(await coordinator.exportPart({ identityId: 'p', part: 'identity', correlationId: 'c' })).toEqual({ identity: 'i' })
     expect(await coordinator.exportPart({ identityId: 'p', part: 'authentication', correlationId: 'c' })).toBeNull()
     expect(await coordinator.exportPart({ identityId: 'p', part: 'authorisation', correlationId: 'c' })).toBeNull()
-    expect(calls).toEqual([['identity', { identityId: 'p', correlationId: 'c' }], ['authentication', { principalId: 'p', correlationId: 'c' }]])
+    expect(await coordinator.exportPart({ identityId: 'p', part: 'configuration', correlationId: 'c' })).toEqual({ values: [] })
+    expect(calls).toEqual([['identity', { identityId: 'p', correlationId: 'c' }], ['authentication', { principalId: 'p', correlationId: 'c' }], ['configuration', { identityId: 'p' }]])
+    // A host without the configuration layer: its part holds nothing.
+    expect(await profileRequestCoordinatorFromMembers({}).exportPart({ identityId: 'p', part: 'configuration', correlationId: 'c' })).toBeNull()
   })
 
   it('rejects for a failing member or an unknown part, never answering as if nothing were held', async () => {

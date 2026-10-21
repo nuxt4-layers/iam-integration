@@ -1,5 +1,6 @@
 import { groupResource } from './access'
 import type {
+  AccountExportLike,
   AuthorisationDecisionLike,
   AuthorisationResourceLike,
   IdentitySubjectLike,
@@ -13,7 +14,8 @@ import type {
 /**
  * Profile's coordination port for data-subject requests
  * (docs/processes/data-subject-requests.md), from the members' server-only
- * export functions.
+ * export functions, and the configuration layer's export of a person's own
+ * account settings, which it holds beside the members.
  *
  * Each member answers for what it holds; a member the host does not compose
  * holds nothing (null). Profile asks for one part at a time, so a member
@@ -28,6 +30,8 @@ export function profileRequestCoordinatorFromMembers(input: {
   exportAuthentication?: PrincipalExportLike
   /** Authorisation's `exportAuthorisationData`. */
   exportAuthorisation?: PrincipalExportLike
+  /** The configuration layer's `exportConfigurationAccountData`, when the host composes it. */
+  exportConfiguration?: AccountExportLike
 }): ProfileRequestCoordinatorLike {
   const principal = (exporter: PrincipalExportLike | undefined) => exporter
     && ((request: { identityId: string, correlationId: string }) => exporter({ principalId: request.identityId, correlationId: request.correlationId }))
@@ -35,6 +39,7 @@ export function profileRequestCoordinatorFromMembers(input: {
     identity: input.exportIdentity,
     authentication: principal(input.exportAuthentication),
     authorisation: principal(input.exportAuthorisation),
+    configuration: input.exportConfiguration && (request => input.exportConfiguration!({ identityId: request.identityId })),
   }
   return {
     async exportPart({ identityId, part, correlationId }) {

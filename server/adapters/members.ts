@@ -226,6 +226,9 @@ export type IdentityExportLike = (input: { identityId: string, correlationId: st
 /** Authentication's `exportAuthenticationData` and Authorisation's `exportAuthorisationData`: null when they hold nothing. */
 export type PrincipalExportLike = (input: { principalId: string, correlationId: string }) => Promise<unknown | null>
 
+/** The configuration layer's `exportConfigurationAccountData`: a person's own account settings. */
+export type AccountExportLike = (input: { identityId: string }) => Promise<unknown | null>
+
 /** Authorisation's governance port (`provideAuthorisationGovernance`): Identity's facts in Authorisation's vocabulary. */
 export interface AuthorisationGovernanceLike {
   describeGroup(input: { groupId: string, principalId: string, correlationId: string }): Promise<(Omit<IdentityGovernedGroupLike, 'personalOfIdentityId'> & { personalOfPrincipalId: string | null }) | null>
@@ -238,7 +241,8 @@ export interface AuthorisationGovernanceLike {
 // ---------------------------------------------------------------------------
 
 /** The members whose parts of a data-subject request Profile coordinates, besides its own. */
-export type ProfileRequestMember = 'identity' | 'authentication' | 'authorisation'
+/** The parts the coordination port answers: the members', and the configuration layer's account settings (Profile contract §14). */
+export type ProfileRequestMember = 'identity' | 'authentication' | 'authorisation' | 'configuration'
 
 /** The parts a legal hold can cover (Profile contract §14). */
 export type ProfileHeldPart = 'profile' | 'authentication' | 'authorisation'
