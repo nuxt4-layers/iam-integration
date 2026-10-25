@@ -12,6 +12,7 @@
 | 7. Service identities | The [service identities](processes/service-identities.md) process: a service identity's name, its memberships in its owning tenant and lifecycle in Identity; client credentials (secrets and signed assertions), short-lived opaque tokens and the `service` principal in Authentication; refusing a service's requests and approvals in Authorisation; the service-governance port (`authenticationServiceGovernanceFromIdentity`) and owners' notices (`createServiceCredentialNoticeHandler`) ([adapters](adapters.md#service-identities)); end-to-end tests in `platform-test-harness` | Complete |
 | 8. Operations and assurance | The host's [operations guide](operations.md) and the [OWASP ASVS mapping](asvs.md) | Complete |
 | 9. Release 1.0 | Contract frozen for 1.x, semantic versioning from here on, `CHANGELOG.md`; tagged `v1.0.0` on the merge commit | In review |
+| 10. Host contract | [`CONTRACT.md`](../CONTRACT.md): the suite's one-page host contract (ADR-0012 §6), from the members' contracts and this repository's documents. ADR-0012's single composition call (`resolveCaller`, `decide`, `tasks`) is not built yet | Complete |
 
 ## Changes required in members
 
