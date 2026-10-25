@@ -27,6 +27,7 @@ Ecosystem-wide rules are not restated here; they live in [`nuxt4-layers/platform
 
 ## Documentation
 
+- [Host contract](CONTRACT.md): what a host needs to compose the suite, on one page (ADR-0012 §6)
 - [Suite architecture](docs/architecture.md): members, ports, events and how a host composes them
 - [State models](docs/states.md): identity, membership, group and tenant states
 - [Processes](docs/processes/README.md): provisioning, groups and their deletion, tenants, joining and leaving, pausing and suspension, approvals, access administration, account closure, data-subject requests, retention, recovery, break-glass access and service identities
